@@ -60,6 +60,14 @@ html = html.replace('</head>', '''<style>
 html = html.replace('<div id="header">',
   '<div class="ukazka-pas">Ukázková verze — data zůstávají jen v tomhle prohlížeči</div>\n<div id="header">')
 
+# ── 4a) ukázka NIKDY nesahá na ostrou databázi ──────────────────────────────
+# Teď už má appka vyplněný ostrý Firebase. V ukázce ho musíme přebít zpátky na
+# PLACEHOLDER, jinak by soubor rozeslaný kolegům chtěl přihlášení a psal by
+# do skutečných dat. Ukázka má běžet výhradně nad prohlížečem toho, kdo ji otevře.
+html = re.sub(r"apiKey:\s*'[^']*'", "apiKey:            'PLACEHOLDER_apiKey'", html, count=1)
+if "PLACEHOLDER_apiKey" not in html:
+    print('CHYBA: nepodařilo se vypnout ostrou databázi v ukázce!'); sys.exit(1)
+
 # ── 4b) co v ukázce nejde, ať se netváří, že jde ────────────────────────────
 # Stažení souboru a otevření pošty prohlížeč v ukázce zablokuje. Místo tlačítka,
 # které nic neudělá, ukážeme vysvětlení. Kopírování do schránky funguje.
