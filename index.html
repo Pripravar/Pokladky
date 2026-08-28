@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pokládky — M - SILNICE</title>
+<meta name="description" content="Plán pokládek, dispečink, nasazení aut a objednávka balené.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pokládky">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a2334">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png" sizes="any">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<!-- Verze v ?v= se zvedá při KAŽDÉM nasazení, jinak telefon drží staré moduly. -->
+<link rel="stylesheet" href="css/app.css?v=3">
+</head>
+<body>
+
+<!-- ══ Hlavička ══════════════════════════════════════════════════════════ -->
+<div id="header">
+  <div class="hdr-title">
+    <div class="hdr-app">Pokládky</div>
+    <button id="stavba-switch" onclick="openStavbaSwitcher()"><span class="sw-nazev">—</span></button>
+  </div>
+  <div id="user-badge" onclick="showView('vice')"><span class="ini"></span></div>
+</div>
+
+<!-- ══ Obsah ═════════════════════════════════════════════════════════════ -->
+<div id="content">
+  <div class="view active" id="view-dnes"></div>
+  <div class="view" id="view-plan"></div>
+  <div class="view" id="view-dispecink"></div>
+  <div class="view" id="view-vice"></div>
+</div>
+
+<!-- ══ Spodní lišta ══════════════════════════════════════════════════════ -->
+<div id="tabbar">
+  <button id="tab-dnes"      data-view="dnes"      class="active" onclick="showView('dnes')"></button>
+  <button id="tab-plan"      data-view="plan"      onclick="showView('plan')"></button>
+  <button id="tab-dispecink" data-view="dispecink" onclick="showView('dispecink')"></button>
+  <button                    data-view="vice"      onclick="showView('vice')"></button>
+</div>
+
+<div id="toast"></div>
+
+<!-- ══ Přihlašovací brána ════════════════════════════════════════════════ -->
+<div id="auth-gate" class="hide">
+  <div class="auth-box">
+    <div class="auth-znak" id="auth-znak"></div>
+    <h2>Pokládky</h2>
+    <div class="auth-sub">M - SILNICE a.s.</div>
+
+    <div class="auth-view on" id="auth-view-main">
+      <p>Pro vstup do aplikace se přihlas.</p>
+      <button class="auth-google" onclick="signInWithGoogle()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
+        <span>Přihlásit se Googlem</span>
+      </button>
+      <div class="auth-pozn">
+        Máš-li pracovní Gmail, klepni nahoře. Po prvním přihlášení Tě musí schválit
+        administrátor — pak uvidíš stavby, ke kterým Ti dá přístup.
+      </div>
+    </div>
+
+    <div class="auth-view" id="auth-view-pending">
+      <div style="display:flex;justify-content:center;color:var(--warn)" id="pending-ico"></div>
+      <p>Ahoj <b id="pending-name"></b>,<br>Tvůj přístup musí nejdřív <b>schválit administrátor</b>.</p>
+      <p class="maly">Jakmile Tě schválí, aplikace se sama otevře — klidně nech okno otevřené.</p>
+      <button class="btn btn-cisty" onclick="signOutUser()">Odhlásit</button>
+    </div>
+
+    <div id="auth-error"></div>
+  </div>
+</div>
+
+<!-- ══ Přepínač staveb ═══════════════════════════════════════════════════ -->
+<div class="modal" id="stavba-modal" onclick="if(event.target===this)closeModal('stavba-modal')">
+  <div class="modal-box">
+    <div class="modal-h"><b>Stavby</b><button class="modal-x" onclick="closeModal('stavba-modal')"></button></div>
+    <div class="karta karta-plocha" id="stavba-list"></div>
+    <button class="btn btn-hlavni btn-siroky" id="btn-nova-stavba" onclick="openNovaStavba()">Nová stavba</button>
+  </div>
+</div>
+
+<!-- ══ Formulář stavby ═══════════════════════════════════════════════════ -->
+<div class="modal modal-plny" id="stavba-form-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b id="stavba-form-title">Nová stavba</b><button class="modal-x" onclick="closeModal('stavba-form-modal')"></button></div>
+
+    <label class="pole"><span class="popis">Název stavby *</span>
+      <input class="f" id="st-nazev" placeholder="II/150 Nasavrky – průtah"></label>
+    <div class="mrizka-2">
+      <label class="pole"><span class="popis">Kód / zakázka</span><input class="f" id="st-kod" placeholder="2026-114"></label>
+      <label class="pole"><span class="popis">Stav</span><select class="f" id="st-stav">
+        <option value="aktivni">běží</option><option value="hotovo">hotovo</option></select></label>
+    </div>
+    <label class="pole"><span class="popis">Objednatel</span>
+      <input class="f" id="st-objednatel" placeholder="ŘSD ČR / KSÚS / obec"></label>
+
+    <div class="sekce"><span class="sekce-t">Úsek v mapě</span></div>
+    <div class="napoveda" style="margin-top:0">
+      Klepni do mapy na <b>začátek úseku</b>, pak na <b>konec</b>. Pro zatáčky přidej mezilehlé body.
+      Staničení na začátku zadej níž — zbytek si appka dopočítá sama.
+    </div>
+    <div class="mapa-box" id="osa-map"></div>
+    <div class="rada" style="margin-top:8px">
+      <button class="btn btn-s" onclick="osaUndo()" id="osa-undo">Zpět bod</button>
+      <button class="btn btn-s" onclick="osaClear()" id="osa-clear">Vymazat osu</button>
+    </div>
+    <div class="mensi" id="osa-info" style="margin:12px 0;line-height:1.6"></div>
+    <label class="pole"><span class="popis">Staničení na začátku úseku (km)</span>
+      <input class="f" id="st-kmstart" type="number" step="any" inputmode="decimal" value="0" oninput="osaUpdateInfo()"></label>
+
+    <div class="lista-dole">
+      <div class="rada">
+        <button class="btn btn-hlavni" onclick="saveStavba()">Uložit stavbu</button>
+        <button class="btn" onclick="closeModal('stavba-form-modal')">Zrušit</button>
+      </div>
+      <button class="btn btn-cisty btn-nebezpeci btn-siroky btn-s" id="st-delete" style="margin-top:8px" onclick="deleteStavba()">Smazat stavbu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Číselníky ═════════════════════════════════════════════════════════ -->
+<div class="modal modal-plny" id="cis-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b>Číselníky</b><button class="modal-x" onclick="closeModal('cis-modal')"></button></div>
+
+    <div id="cis-browse">
+      <div class="pruh-chipu" id="cis-tabs"></div>
+      <div class="karta karta-plocha" id="cis-list"></div>
+      <div class="rada" style="margin-top:12px">
+        <button class="btn btn-hlavni" onclick="cisNew()" id="cis-add-btn"></button>
+        <button class="btn" onclick="cisImportOpen()" id="cis-imp-btn"></button>
+        <button class="btn" id="cis-seed-btn" onclick="cisSeed()"></button>
+      </div>
+    </div>
+
+    <div id="cis-edit" style="display:none">
+      <button class="btn btn-cisty btn-s" style="margin-bottom:12px" onclick="cisSetEdit(false)" id="cis-back"></button>
+      <div class="sekce"><span class="sekce-t" id="cis-edit-title"></span></div>
+      <div id="cis-edit-fields"></div>
+      <div class="lista-dole">
+        <div class="rada">
+          <button class="btn btn-hlavni" onclick="cisSave()">Uložit</button>
+          <button class="btn" onclick="cisSetEdit(false)">Zrušit</button>
+        </div>
+        <button class="btn btn-cisty btn-nebezpeci btn-siroky btn-s" id="cis-del" style="margin-top:8px" onclick="cisDelete()">Smazat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Import z Excelu ═══════════════════════════════════════════════════ -->
+<div class="modal" id="imp-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b id="imp-title">Import</b><button class="modal-x" onclick="closeModal('imp-modal')"></button></div>
+    <div class="napoveda" id="imp-cols" style="margin-top:0"></div>
+    <textarea class="f" id="imp-text" style="min-height:150px;font-family:ui-monospace,monospace;font-size:13px"
+              placeholder="Jméno a příjmení;Profese;Telefon&#10;Jan Novák;finišerista;+420 601 000 111"></textarea>
+    <div id="imp-preview"></div>
+    <div class="rada" style="margin-top:16px">
+      <button class="btn" onclick="cisImportParse()">Zkontrolovat</button>
+      <button class="btn btn-hlavni" onclick="cisImportRun()">Importovat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Výběr polohy na mapě ══════════════════════════════════════════════ -->
+<div class="modal" id="mappick-modal" style="z-index:560">
+  <div class="modal-box">
+    <div class="modal-h"><b>Vybrat polohu</b><button class="modal-x" onclick="closeModal('mappick-modal')"></button></div>
+    <div class="mapa-box" id="mappick-map"></div>
+    <div class="napoveda" id="mappick-info" style="margin:12px 0">Klepni do mapy na místo obalovny.</div>
+    <div class="rada">
+      <button class="btn btn-hlavni" onclick="mapPickConfirm()">Použít</button>
+      <button class="btn" onclick="closeModal('mappick-modal')">Zrušit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Karta pokládky ════════════════════════════════════════════════════ -->
+<div class="modal modal-plny" id="pokladka-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b id="pokladka-title">Pokládka</b><button class="modal-x" onclick="closeModal('pokladka-modal')"></button></div>
+    <div id="pokladka-body"></div>
+  </div>
+</div>
+
+<!-- ══ Objednávky ════════════════════════════════════════════════════════ -->
+<div class="modal modal-plny" id="obj-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b>Objednávky</b><button class="modal-x" onclick="closeModal('obj-modal')"></button></div>
+    <div id="obj-body"></div>
+  </div>
+</div>
+
+<!-- ══ Správa uživatelů ══════════════════════════════════════════════════ -->
+<div class="modal modal-plny" id="sprava-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b>Správa uživatelů</b><button class="modal-x" onclick="closeModal('sprava-modal')"></button></div>
+    <div id="sprava-list"></div>
+  </div>
+</div>
+
+<!-- ══ Vnořený panel (práva, stavby uživatele) ═══════════════════════════ -->
+<div class="modal" id="sub-modal" style="z-index:540">
+  <div class="modal-box">
+    <div class="modal-h"><b id="sub-title"></b><button class="modal-x" onclick="closeModal('sub-modal')"></button></div>
+    <div id="sub-body"></div>
+  </div>
+</div>
+
+<!-- ══ Moduly ════════════════════════════════════════════════════════════ -->
+<script src="js/ikony.js?v=3"></script>
+<script src="js/core.js?v=3"></script>
+<script src="js/mapa.js?v=3"></script>
+<script src="js/ciselniky.js?v=3"></script>
+<script src="js/stavby.js?v=3"></script>
+<script src="js/pokladka.js?v=3"></script>
+<script src="js/plan.js?v=3"></script>
+<script src="js/dispecink.js?v=3"></script>
+<script src="js/objednavky.js?v=3"></script>
+<script src="js/dnes.js?v=3"></script>
+<script src="js/sprava.js?v=3"></script>
+<script src="js/ukazka.js?v=3"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', function(){
+    vykresliStatickeIkony();
+    bootApp();
+    try { naplnUkazkovaData(); } catch(e){ console.warn(e); }
+    showView('dnes');
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(function(){});
+  });
+</script>
+<!-- Plovoucí přepínač mezi appkami ze sdíleného rozcestníku OZ-JIH -->
+<script src="https://pripravar.github.io/OZ-JIH/switcher.js" defer></script>
+<script>
+  // Pilulka „Stavby" (odkazy na ostatní appky z rozcestníku OZ-JIH) je plovoucí
+  // a tažitelná. Na telefonu by uprostřed obrazovky překážela, proto ji při
+  // prvním spuštění zasuneme k levému okraji. Kdo si ji přetáhne jinam,
+  // toho už nerušíme — proto se to udělá jen jednou.
+  // Pilulka vzniká až po stažení seznamu appek, takže na ni chvíli počkáme.
+  (function uklidPrepinac(){
+    var pokusu = 0;
+    var timer = setInterval(function(){
+      pokusu++;
+      var b = document.getElementById('msw-btn');
+      if(!b){ if(pokusu > 20) clearInterval(timer); return; }
+      clearInterval(timer);
+      var h = window.innerHeight || 0;
+      if(h < 300) return;
+      var uzUklizeno = false;
+      try { uzUklizeno = localStorage.getItem('pokladky_msw_init') === '1'; } catch(e){}
+      if(uzUklizeno && b.getBoundingClientRect().top >= 96) return;   // uživatel si ji už umístil
+      var top = Math.round(h * 0.72);
+      b.style.top = top + 'px';
+      b.classList.add('msw-collapsed');
+      try {
+        localStorage.setItem('msw_pos_v1', JSON.stringify({ left:8, top:top, side:'left', collapsed:true }));
+        localStorage.setItem('pokladky_msw_init', '1');
+      } catch(e){}
+    }, 300);
+  })();
+</script>
+</body>
+</html>

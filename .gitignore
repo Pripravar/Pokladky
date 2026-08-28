@@ -1,0 +1,14 @@
+# Servisní klíče — NIKDY do repozitáře (je to master heslo k databázi)
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+.env
+
+# Pomocné soubory ukázky (velké, generují se z kódu příkazem build-ukazka.py)
+_ukazka/
+Pokladky-ukazka.html
+Pokladky-ukazka-odkaz.html
+
+# Systémové
+.DS_Store
+node_modules/
+*.log

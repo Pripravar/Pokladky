@@ -1,0 +1,84 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "uzivatele": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')",
+        "role":     { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
+        "approved": { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
+        "blocked":  { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
+        "perms":    { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
+        "stavby": {
+          "$sid": {
+            ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || (auth.uid === $uid && root.child('stavby/' + $sid + '/vlastnikUid').val() === auth.uid)"
+          }
+        }
+      }
+    },
+
+    "stavby": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
+      "$sid": {
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vlastnikUid').val() === auth.uid || data.child('admini/' + auth.uid).val() === true || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer')",
+        "vlastnikUid": { ".validate": "!data.exists() || data.val() === newData.val() || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" }
+      }
+    },
+
+    "ciselniky": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+      ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true"
+    },
+
+    "pokladky": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
+      "$pid": {
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vytvorilUid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')"
+      }
+    },
+
+    "dispecink": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+      "$tyden": {
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
+        "potvrzeno": {
+          "$uid": { ".write": "auth.uid === $uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" }
+        }
+      }
+    },
+
+    "vazni_listky": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
+      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')" }
+    },
+
+    "dochazka": {
+      "$sid": {
+        ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')"
+      }
+    },
+
+    "vydani": {
+      "$id": {
+        ".read": "auth != null && (data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')"
+      }
+    },
+
+    "urazy": {
+      ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'stavbyvedouci')",
+      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')" }
+    },
+
+    "tankovani":  { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+                    "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')" } },
+    "servisy":    { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+                    ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true" },
+    "material":   { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+                    ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true" },
+    "hlaseni":    { ".read": "auth != null", ".write": "auth != null" }
+  }
+}
