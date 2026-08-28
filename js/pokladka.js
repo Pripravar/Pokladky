@@ -121,8 +121,11 @@ function rozborDopravy(p){
 
   /* Varianty: kolik aut × kolik otoček na auto × za jak dlouho je navezeno. */
   out.varianty = [];
+  var predchozi = null;
   for(var a = 1; a <= Math.min(12, out.celkemOdvozu); a++){
     var otocek = Math.ceil(out.celkemOdvozu / a);
+    if(otocek === predchozi) continue;      // další auto už nic nezrychlí, nenabízet ho
+    predchozi = otocek;
     out.varianty.push({ aut:a, otocek:otocek, hodin: otocek * otockaH });
   }
   /* Doporučení: nejmíň aut, které to stihnou do konce směny (10 h). */
