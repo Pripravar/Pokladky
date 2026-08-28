@@ -7,7 +7,10 @@
  * zadá staničení na začátku a zbytek si appka dopočítá sama (dle konceptu).
  * ========================================================================== */
 
-var MAPY_API_KEY = '';        // klíč z api.mapy.cz; bez něj se použije OpenStreetMap
+/* Klíč k mapovým podkladům Mapy.com. Je to klíč do prohlížeče, takže je v kódu
+ * vidět — chrání se tím, že se v účtu Mapy.com omezí na doménu appky
+ * (pripravar.github.io). Bez klíče appka spadne na OpenStreetMap. */
+var MAPY_API_KEY = 'n4vDG-d4mkhllq8P_9783hgyMtm9U6RU6WwwGvvpvuY';
 
 /* Je mapová knihovna k dispozici? (Bez signálu nebo v ukázkové verzi nemusí být.) */
 function mapaDostupna(){ return typeof L !== 'undefined' && L && typeof L.map === 'function'; }
@@ -24,18 +27,37 @@ function createMap(elId, center, zoom){
   }
   var map = L.map(elId, { zoomControl:true, attributionControl:true })
              .setView(center || [49.8, 15.5], zoom || 7);
-  if(MAPY_API_KEY){
-    L.tileLayer('https://api.mapy.com/v1/maptiles/outdoor/256/{z}/{x}/{y}?apikey=' + MAPY_API_KEY, {
-      maxZoom:19, attribution:'<a href="https://mapy.com/">Mapy.com</a>'
-    }).addTo(map);
-  } else {
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom:19, attribution:'© OpenStreetMap'
-    }).addTo(map);
-  }
+  nasadPodklad(map);
   // Leaflet potřebuje po zobrazení skrytého prvku přeměřit velikost, jinak je mapa šedá.
   setTimeout(function(){ map.invalidateSize(); }, 120);
   return map;
+}
+
+/* Podklad mapy: turistická Mapy.com (stejně jako v ostatních appkách).
+ * Když se dlaždice nenačtou — třeba na localhostu, kde doména není u Mapy.com
+ * zaregistrovaná — přepne se to samo na OpenStreetMap, ať mapa nezůstane šedá. */
+function nasadPodklad(map){
+  function osm(){
+    return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom:19, attribution:'© OpenStreetMap'
+    });
+  }
+  if(!MAPY_API_KEY){ osm().addTo(map); return; }
+
+  var mapy = L.tileLayer('https://api.mapy.com/v1/maptiles/outdoor/256/{z}/{x}/{y}?apikey=' + MAPY_API_KEY, {
+    maxZoom:19,
+    attribution:'<a href="https://mapy.com/" target="_blank" rel="noopener">Mapy.com</a>'
+  });
+  var chyb = 0, prepnuto = false;
+  mapy.on('tileerror', function(){
+    if(prepnuto) return;
+    if(++chyb < 4) return;                       // ojedinělá chyba dlaždice nevadí
+    prepnuto = true;
+    console.info('Podklad Mapy.com se nenačetl, přepínám na OpenStreetMap.');
+    map.removeLayer(mapy);
+    osm().addTo(map);
+  });
+  mapy.addTo(map);
 }
 
 /* Vzdálenost dvou bodů [lat,lng] v metrech. */
