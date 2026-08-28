@@ -124,6 +124,12 @@
     "hlaseni": {
       ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/approved').val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))",
       ".write": "auth != null"
+    },
+    "vazni_foto": {
+      "$id": {
+        ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true"
+      }
     }
   }
 }

@@ -21,7 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Verze v ?v= se zvedá při KAŽDÉM nasazení, jinak telefon drží staré moduly. -->
-<link rel="stylesheet" href="css/app.css?v=6">
+<link rel="stylesheet" href="css/app.css?v=7">
 </head>
 <body>
 
@@ -238,6 +238,20 @@
   </div>
 </div>
 
+<!-- ══ Vážní lístky ═══════════════════════════════════════════════════════ -->
+<div class="modal modal-plny" id="vazni-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b>Vážní lístky</b><button class="modal-x" onclick="closeModal('vazni-modal')"></button></div>
+    <div id="vazni-seznam"></div>
+    <div id="vazni-edit" style="display:none"></div>
+  </div>
+</div>
+<input type="file" id="vazni-foto-in"  accept="image/*" capture="environment" style="display:none" onchange="vazniFotoVybrana(this)">
+<input type="file" id="vazni-foto-lib" accept="image/*" style="display:none" onchange="vazniFotoVybrana(this)">
+<div id="vazni-lupa" onclick="this.style.display='none'"
+     style="display:none;position:fixed;inset:0;z-index:600;background:rgba(8,12,22,.94);
+            align-items:center;justify-content:center;padding:12px"></div>
+
 <!-- ══ Objednávky ════════════════════════════════════════════════════════ -->
 <div class="modal modal-plny" id="obj-modal">
   <div class="modal-box">
@@ -263,18 +277,19 @@
 </div>
 
 <!-- ══ Moduly ════════════════════════════════════════════════════════════ -->
-<script src="js/ikony.js?v=6"></script>
-<script src="js/core.js?v=6"></script>
-<script src="js/mapa.js?v=6"></script>
-<script src="js/ciselniky.js?v=6"></script>
-<script src="js/stavby.js?v=6"></script>
-<script src="js/pokladka.js?v=6"></script>
-<script src="js/plan.js?v=6"></script>
-<script src="js/dispecink.js?v=6"></script>
-<script src="js/objednavky.js?v=6"></script>
-<script src="js/dnes.js?v=6"></script>
-<script src="js/sprava.js?v=6"></script>
-<script src="js/ukazka.js?v=6"></script>
+<script src="js/ikony.js?v=7"></script>
+<script src="js/core.js?v=7"></script>
+<script src="js/mapa.js?v=7"></script>
+<script src="js/ciselniky.js?v=7"></script>
+<script src="js/stavby.js?v=7"></script>
+<script src="js/pokladka.js?v=7"></script>
+<script src="js/plan.js?v=7"></script>
+<script src="js/dispecink.js?v=7"></script>
+<script src="js/objednavky.js?v=7"></script>
+<script src="js/vazni.js?v=7"></script>
+<script src="js/dnes.js?v=7"></script>
+<script src="js/sprava.js?v=7"></script>
+<script src="js/ukazka.js?v=7"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function(){
     vykresliStatickeIkony();

@@ -513,6 +513,7 @@ function _enterApp(){
   if(typeof loadStavby    === 'function') loadStavby();
   if(typeof loadPokladky  === 'function') loadPokladky();
   if(typeof loadDispecinkTydny === 'function') loadDispecinkTydny();
+  if(typeof loadVazni === 'function') loadVazni();
 }
 
 /* Živě sleduje uživatele — po změně práv adminem se UI samo přepočítá. */
