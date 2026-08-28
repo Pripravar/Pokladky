@@ -48,12 +48,16 @@ function nasadPodklad(map){
     maxZoom:19,
     attribution:'<a href="https://mapy.com/" target="_blank" rel="noopener">Mapy.com</a>'
   });
-  var chyb = 0, prepnuto = false;
+  /* Na záložní mapu přepínáme jen když se z Mapy.com nenačte VŮBEC NIC
+   * (neplatný klíč, výpadek, vyčerpaný limit). Pár vypadlých dlaždic na
+   * mobilním signálu je normální a podklad kvůli nim měnit nechceme. */
+  var chyb = 0, nacteno = 0, prepnuto = false;
+  mapy.on('tileload', function(){ nacteno++; });
   mapy.on('tileerror', function(){
-    if(prepnuto) return;
-    if(++chyb < 4) return;                       // ojedinělá chyba dlaždice nevadí
+    if(prepnuto || nacteno > 0) return;
+    if(++chyb < 5) return;
     prepnuto = true;
-    console.info('Podklad Mapy.com se nenačetl, přepínám na OpenStreetMap.');
+    console.info('Podklad Mapy.com se nenačítá, přepínám na OpenStreetMap.');
     map.removeLayer(mapy);
     osm().addTo(map);
   });

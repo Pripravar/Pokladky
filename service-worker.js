@@ -6,7 +6,7 @@
  * Proto se u vlastních souborů používá „nejdřív síť, cache jako záloha"
  * (stale-while-revalidate) a při KAŽDÉM nasazení se zvedne CACHE_VERSION.
  * ========================================================================== */
-var CACHE_VERSION = 'pokladky-v5';
+var CACHE_VERSION = 'pokladky-v6';
 var JADRO = [
   './', './index.html', './manifest.json', './css/app.css',
   './js/ikony.js', './js/core.js', './js/mapa.js', './js/ciselniky.js', './js/stavby.js',
