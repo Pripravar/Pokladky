@@ -28,11 +28,13 @@ mapový podklad a neuloží soubor do počítače (kopírování do schránky fu
 
 ---
 
-## Jak to spustit hned (bez Firebase)
+## Ukázkový režim (bez databáze)
 
-Aplikace umí **demo režim**: dokud `FIREBASE_CONFIG.apiKey` v `js/core.js` obsahuje
-slovo `PLACEHOLDER`, nepřihlašuje se a data si ukládá jen v prohlížeči. Všechno jde
-proklikat a vyzkoušet.
+Aplikace ho umí, ale **teď je vypnutý**, protože má vyplněnou ostrou databázi.
+Zapne se sám, kdyby `FIREBASE_CONFIG.apiKey` v `js/core.js` obsahoval slovo
+`PLACEHOLDER` — pak se nepřihlašuje, data si ukládá jen v prohlížeči a
+`js/ukazka.js` je naplní ukázkovými pokládkami. Slouží k tomu příkaz
+`build-ukazka.py`, který z toho udělá jeden soubor k rozeslání.
 
 ```bash
 python3 -m http.server 8899
@@ -42,27 +44,53 @@ Pak otevřít <http://localhost:8899/>. Zkušební data se smažou v **Více →
 
 ---
 
-## Ostrý provoz — co je potřeba nastavit
+## Stav nasazení
 
-1. **Firebase projekt** (Realtime Database `europe-west1`, Authentication → Google,
-   plán **Blaze** kvůli pozdějším Cloud Functions).
-2. Config z konzole vložit do `js/core.js` → `FIREBASE_CONFIG`. Tím se **sama zapne
-   přihlašovací brána** (pozor: jakákoliv hodnota bez slova `PLACEHOLDER` bránu zapne —
-   s neplatným klíčem se pak nedá dovnitř).
-3. **Pravidla databáze** nasadit ze souboru `database.rules.json`:
-   ```bash
-   firebase deploy --only database
-   ```
-4. **První přihlášený se automaticky stane administrátorem.** Ať je to ten správný
-   člověk. Každého dalšího musí administrátor schválit (Více → Správa uživatelů).
-5. **GitHub Pages**: repo `Pripravar/Pokladky`, Pages z větve `main` / root.
-6. Přidat do rozcestníku — v `Rozcestnik/OZ-JIH/stavby.json` do `nastroje[]`:
+**Firebase je hotový** (2026-08-28):
+
+| co | stav |
+|---|---|
+| projekt | `pokladky-msilnice` — [konzole](https://console.firebase.google.com/project/pokladky-msilnice) |
+| Realtime Database | běží v **europe-west1** (Belgie, data zůstávají v EU) |
+| pravidla | nasazená z `database.rules.json` — ověřeno útokem: nepřihlášený nepřečte ani nezapíše nic (HTTP 401) |
+| přihlašování | Google, zapnuté |
+| povolené domény | `pripravar.github.io`, `localhost` |
+| config | vyplněný v `js/core.js` |
+| plán | Spark (zdarma). Blaze bude potřeba až na Cloud Functions (push notifikace, AI u vážních lístků). |
+
+**GitHub repozitář je založený:** [Pripravar/Pokladky](https://github.com/Pripravar/Pokladky).
+Kód je lokálně zacommitovaný a nastavený na tenhle vzdálený repozitář.
+
+### Zbývá udělat (vy)
+
+1. **Odeslat kód** — v GitHub Desktop: *File → Add Local Repository* → vybrat složku
+   `aplikace pokládky/Pokladky` → *Push origin*.
+2. **Zapnout GitHub Pages** — v repozitáři *Settings → Pages → Source: Deploy from a branch*,
+   větev `main`, složka `/ (root)`. Za 1–2 minuty poběží na
+   `https://pripravar.github.io/Pokladky/`.
+3. **Přihlásit se jako první** — **první přihlášený se automaticky stane administrátorem.**
+   Ať jste to vy, ne někdo jiný. Každého dalšího pak schvalujete ve *Více → Správa uživatelů*.
+4. **Přidat do rozcestníku** — v `Rozcestnik/OZ-JIH/stavby.json` do `nastroje[]`:
    ```json
    {"ico":"🛣️","name":"Pokládky","desc":"Plán pokládek, dispečink, nasazení a balená.",
     "url":"https://pripravar.github.io/Pokladky/","status":"live"}
    ```
-7. Volitelně `MAPY_API_KEY` v `js/mapa.js` (bez klíče jede OpenStreetMap).
-8. Doplnit `icon-192.png` a `icon-512.png` (kvůli instalaci na plochu).
+
+### Proč veřejný repozitář nevadí
+
+Na GitHubu je **jen kód** — žádná data. Pokládky, lidi, stroje i docházka jsou ve Firebase
+za přihlášením. Firebase config v `js/core.js` (včetně `apiKey`) je u webových aplikací
+veřejný vždycky a sám o sobě nikomu nic neotevře — je to adresa, ne klíč. Data chrání
+**pravidla databáze**: kdo není přihlášený a schválený administrátorem, nepřečte ani nezapíše
+nic. Ověřeno přímým dotazem zvenčí:
+
+```bash
+curl "https://pokladky-msilnice-default-rtdb.europe-west1.firebasedatabase.app/pokladky.json"
+# → HTTP 401 {"error":"Permission denied"}
+```
+
+Do repozitáře **nikdy nepatří servisní klíč** (`*serviceAccount*.json`) — to je master heslo
+k databázi. `.gitignore` ho už blokuje.
 
 ---
 
