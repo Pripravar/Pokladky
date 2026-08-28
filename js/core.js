@@ -24,7 +24,11 @@ var FIREBASE_CONFIG = {
   messagingSenderId: '1094246768215',
   appId:             '1:1094246768215:web:006321f04db4723b52cd12'
 };
-var ADMIN_UIDS = [];              // UID administrátorů (doplní se po založení projektu)
+var ADMIN_UIDS = [];              // UID administrátorů (volitelné, doplňuje se až za provozu)
+/* Účty, které jsou administrátorem VŽDY — bez ohledu na to, kdo se přihlásí první
+ * a co je zapsané v databázi. Pojistka proti tomu, aby appku odemknul někdo jiný,
+ * a záchrana, kdyby si admin omylem odebral práva. */
+var ADMIN_EMAILS = ['arasid33@gmail.com'];
 var STORAGE_BUCKET_URL = '';      // EU bucket pro fotky (doplní se později)
 
 function authConfigOk(){
@@ -259,11 +263,16 @@ function myUid(){ return (window.currentUser && window.currentUser.uid) || null;
 function myRecord(){ var u = myUid(); return (u && window.allUsers[u]) || {}; }
 function myRole(){ return myRecord().role || (isDemoMode() ? 'admin' : 'ctenar'); }
 
+function jeAdminEmail(email){
+  return ADMIN_EMAILS.indexOf(String(email || '').trim().toLowerCase()) !== -1;
+}
 function isAdmin(uid){
   uid = uid || myUid();
   if(!uid) return false;
   if(ADMIN_UIDS.indexOf(uid) !== -1) return true;
   var u = window.allUsers[uid] || {};
+  if(jeAdminEmail(u.email)) return true;
+  if(uid === myUid() && jeAdminEmail((window.currentUser || {}).email)) return true;
   return u.role === 'admin';
 }
 function isBlocked(uid){
@@ -379,18 +388,19 @@ function completeLogin(user, nameOverride){
       if(fbAuth) fbAuth.signOut();
       return;
     }
-    // První uživatel vůbec se stane administrátorem — jinak by appku nikdo neodemknul.
-    if(!u.role){
-      db.ref('uzivatele').once('value').then(function(all){
-        var n = all.val() ? Object.keys(all.val()).length : 0;
-        var role = (n <= 1) ? 'admin' : 'stavbyvedouci';
-        var approved = (n <= 1);
-        db.ref('uzivatele/' + user.uid).update({ role:role, approved:approved });
-        if(approved) _enterApp(); else _showPendingApproval(user.uid, name);
-      });
-      return;
+    // Pevně určený administrátor — vždy dovnitř a vždy s plnými právy.
+    if(jeAdminEmail(window.currentUser.email)){
+      if(u.role !== 'admin' || u.approved !== true){
+        db.ref('uzivatele/' + user.uid).update({ role:'admin', approved:true });
+      }
+      _enterApp(); return;
     }
-    if(u.approved !== true && !isAdmin(user.uid) && ADMIN_UIDS.indexOf(user.uid) === -1){
+    // Nikdo jiný se administrátorem nestane sám od sebe — čeká na schválení.
+    // (Dřív tu bylo pravidlo „kdo se přihlásí první, je admin". S pevně určeným
+    //  administrátorem je zbytečné a byla by to díra: stačilo by se přihlásit dřív.)
+    // Roli nepřiřazujeme sami — pravidla databáze zápis role povolí jen adminovi.
+    // Novému člověku ji nastaví administrátor, když ho schvaluje.
+    if(u.approved !== true && ADMIN_UIDS.indexOf(user.uid) === -1){
       _showPendingApproval(user.uid, name); return;
     }
     _enterApp();

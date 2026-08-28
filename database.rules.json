@@ -6,14 +6,14 @@
     "uzivatele": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')",
-        "role":     { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
-        "approved": { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
-        "blocked":  { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
-        "perms":    { ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" },
+        ".write": "auth != null && (auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))",
+        "role":     { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
+        "approved": { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
+        "blocked":  { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
+        "perms":    { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
         "stavby": {
           "$sid": {
-            ".write": "root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || (auth.uid === $uid && root.child('stavby/' + $sid + '/vlastnikUid').val() === auth.uid)"
+            ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || (auth.uid === $uid && root.child('stavby/' + $sid + '/vlastnikUid').val() === auth.uid)"
           }
         }
       }
@@ -22,8 +22,8 @@
     "stavby": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
       "$sid": {
-        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vlastnikUid').val() === auth.uid || data.child('admini/' + auth.uid).val() === true || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer')",
-        "vlastnikUid": { ".validate": "!data.exists() || data.val() === newData.val() || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" }
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vlastnikUid').val() === auth.uid || data.child('admini/' + auth.uid).val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer')",
+        "vlastnikUid": { ".validate": "!data.exists() || data.val() === newData.val() || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" }
       }
     },
 
@@ -35,7 +35,7 @@
     "pokladky": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
       "$pid": {
-        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vytvorilUid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')"
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vytvorilUid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')"
       }
     },
 
@@ -44,37 +44,37 @@
       "$tyden": {
         ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
         "potvrzeno": {
-          "$uid": { ".write": "auth.uid === $uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin'" }
+          "$uid": { ".write": "auth.uid === $uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" }
         }
       }
     },
 
     "vazni_listky": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
-      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')" }
+      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))" }
     },
 
     "dochazka": {
       "$sid": {
-        ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
-        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')"
+        ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
       }
     },
 
     "vydani": {
       "$id": {
-        ".read": "auth != null && (data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
-        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')"
+        ".read": "auth != null && (data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
       }
     },
 
     "urazy": {
-      ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'stavbyvedouci')",
-      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')" }
+      ".read": "auth != null && ((root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'stavbyvedouci')",
+      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))" }
     },
 
     "tankovani":  { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
-                    "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'admin')" } },
+                    "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))" } },
     "servisy":    { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
                     ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true" },
     "material":   { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
