@@ -15,6 +15,20 @@ function renderDnes(){
        '<div class="nd-dow">' + DNY_CZ[d.getDay()] + '</div>' +
        '<div class="nd-datum">' + czDate(dnes) + '</div></div>';
 
+  /* Někdo nový čeká na schválení — dokud ho admin nepustí dál, nedostane se nikam.
+     Proto to nesmí být schované v nabídce, ale rovnou na úvodní obrazovce. */
+  var ceka = (typeof pocetCekajicich === 'function') ? pocetCekajicich() : 0;
+  if(ceka){
+    h += '<div class="karta klik" style="border-color:rgba(240,165,63,.5);background:var(--warn-soft)" ' +
+         'onclick="openSprava()">' +
+         '<div class="udaj" style="color:var(--warn);font-size:14.5px;align-items:center">' +
+           ico('vystraha',20) +
+           '<span><b>' + ceka + (ceka === 1 ? ' člověk čeká' : (ceka < 5 ? ' lidé čekají' : ' lidí čeká')) +
+           ' na schválení.</b><br>Dokud je nepustíš dál, do aplikace se nedostanou.</span>' +
+           '<span style="margin-left:auto">' + ico('vpravo',18) + '</span>' +
+         '</div></div>';
+  }
+
   /* Průvodce nastavením — dokud appka nemá základ, je tohle to nejužitečnější,
      co na úvodní obrazovce může být. Po naplnění zmizí. */
   var kroky = setupKroky(), zbyva = kroky.filter(function(k){ return !k.hotovo; });

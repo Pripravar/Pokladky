@@ -2,83 +2,128 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "uzivatele": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/approved').val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))",
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))",
-        "role":     { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
-        "approved": { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
-        "blocked":  { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
-        "perms":    { ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" },
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')",
+        "uid": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "name": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "email": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "phone": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "photo": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "firma": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "lastSeen": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "fcmTokens": {
+          ".write": "auth != null && auth.uid === $uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "role": {
+          ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "approved": {
+          ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "blocked": {
+          ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "perms": {
+          ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
+        "poznamka": {
+          ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        },
         "stavby": {
           "$sid": {
-            ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || (auth.uid === $uid && root.child('stavby/' + $sid + '/vlastnikUid').val() === auth.uid)"
+            ".write": "(root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || (auth != null && auth.uid === $uid && root.child('stavby/' + $sid + '/vlastnikUid').val() === auth.uid)"
           }
         }
       }
     },
-
     "stavby": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
       "$sid": {
         ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vlastnikUid').val() === auth.uid || data.child('admini/' + auth.uid).val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer')",
-        "vlastnikUid": { ".validate": "!data.exists() || data.val() === newData.val() || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" }
+        "vlastnikUid": {
+          ".validate": "!data.exists() || data.val() === newData.val() || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+        }
       }
     },
-
     "ciselniky": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
       ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true"
     },
-
     "pokladky": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
       "$pid": {
         ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('vytvorilUid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')"
       }
     },
-
     "dispecink": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
       "$tyden": {
-        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
         "potvrzeno": {
-          "$uid": { ".write": "auth.uid === $uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')" }
+          "$uid": {
+            ".write": "auth.uid === $uid || root.child('uzivatele/' + auth.uid + '/role').val() === 'dispecer' || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com')"
+          }
         }
       }
     },
-
     "vazni_listky": {
       ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true",
-      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))" }
+      "$id": {
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
+      }
     },
-
     "dochazka": {
       "$sid": {
         ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
-        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (root.child('uzivatele/' + auth.uid + '/stavby/' + $sid).val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
       }
     },
-
     "vydani": {
       "$id": {
         ".read": "auth != null && (data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu')",
-        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
       }
     },
-
     "urazy": {
       ".read": "auth != null && ((root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com') || root.child('uzivatele/' + auth.uid + '/role').val() === 'vedouciProvozu' || root.child('uzivatele/' + auth.uid + '/role').val() === 'stavbyvedouci')",
-      "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))" }
+      "$id": {
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
+      }
     },
-
-    "tankovani":  { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
-                    "$id": { ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))" } },
-    "servisy":    { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
-                    ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true" },
-    "material":   { ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
-                    ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true" },
-    "hlaseni":    { ".read": "auth != null", ".write": "auth != null" }
+    "tankovani": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+      "$id": {
+        ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true && (!data.exists() || data.child('uid').val() === auth.uid || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))"
+      }
+    },
+    "servisy": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+      ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true"
+    },
+    "material": {
+      ".read": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true",
+      ".write": "auth != null && root.child('uzivatele/' + auth.uid + '/approved').val() === true && root.child('uzivatele/' + auth.uid + '/blocked').val() !== true"
+    },
+    "hlaseni": {
+      ".read": "auth != null && (root.child('uzivatele/' + auth.uid + '/approved').val() === true || (root.child('uzivatele/' + auth.uid + '/role').val() === 'admin' || auth.token.email === 'arasid33@gmail.com'))",
+      ".write": "auth != null"
+    }
   }
 }

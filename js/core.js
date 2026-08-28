@@ -281,9 +281,13 @@ function isBlocked(uid){
 }
 
 function hasPerm(feature){
-  if(!myUid()) return false;
+  var me = myUid();
+  if(!me) return false;
   if(isBlocked()) return false;
   if(isAdmin()) return true;
+  // Účet smazaný administrátorem (nebo záznam chybí) → nic. Kdyby se sem spadlo
+  // na výchozí roli, měl by smazaný uživatel najednou víc práv, ne míň.
+  if(window._usersLoaded && !window.allUsers[me]) return false;
   var u = myRecord();
   if(u.perms && u.perms[feature] === true)  return true;    // individuální doplněk
   if(u.perms && u.perms[feature] === false) return false;   // individuální odebrání
@@ -342,15 +346,82 @@ function isStavbaAdmin(sid){
 function showAuthError(msg){
   var el = document.getElementById('auth-error'); if(el) el.textContent = msg || '';
 }
+var AUTH_POHLEDY = ['main','telefon','jmeno','email','pending'];
 function _setAuthView(name){
-  ['main','name'].forEach(function(v){
+  AUTH_POHLEDY.forEach(function(v){
     var el = document.getElementById('auth-view-' + v);
     if(el) el.classList.toggle('on', v === name);
   });
   showAuthError('');
 }
 function showMainView(){ _setAuthView('main'); }
-function showNameView(){ _setAuthView('name'); }
+function showPhoneView(){ _setAuthView('telefon'); setTimeout(function(){ var e=document.getElementById('tel-input'); if(e) e.focus(); },80); }
+function showNameView(){ _setAuthView('jmeno'); setTimeout(function(){ var e=document.getElementById('jmeno-input'); if(e) e.focus(); },80); }
+function showEmailView(){ _setAuthView('email'); setTimeout(function(){ var e=document.getElementById('mail-input'); if(e) e.focus(); },80); }
+
+/* ── Přihlášení jménem a telefonem (bez SMS) ─────────────────────────────
+ * Stejné jako v ostatních appkách: člověk napíše číslo a celé jméno, appka
+ * si ho zapamatuje a přihlásí ho anonymním účtem Firebase. Není to ověření
+ * totožnosti — skutečnou branou je schválení administrátorem. */
+function startPhoneLogin(){
+  var tel = (document.getElementById('tel-input').value || '').trim();
+  if(tel.replace(/\D/g,'').length < 9){ showAuthError('Zadej celé telefonní číslo.'); return; }
+  window._prihlasTelefon = tel;
+  showNameView();
+}
+function savePhoneUserName(){
+  var jmeno = (document.getElementById('jmeno-input').value || '').trim();
+  if(jmeno.split(/\s+/).length < 2){
+    showAuthError('Napiš celé jméno i příjmení — podle toho Tě administrátor pozná.'); return;
+  }
+  if(!fbAuth){ showAuthError('Přihlášení není nastavené.'); return; }
+  localStorage.setItem('pokladky_jmeno', jmeno);
+  localStorage.setItem('pokladky_telefon', window._prihlasTelefon || '');
+  fbAuth.signInAnonymously()
+    .then(function(res){ completeLogin(res.user, jmeno, window._prihlasTelefon); })
+    .catch(function(e){ showAuthError('Přihlášení se nepovedlo: ' + ((e && e.message) || e)); });
+}
+
+/* ── Přihlášení e-mailem a heslem ────────────────────────────────────────
+ * Pro každého, kdo nemá Gmail (firemní pošta na Microsoftu apod.). */
+function signInEmail(){
+  var mail = (document.getElementById('mail-input').value || '').trim();
+  var heslo = document.getElementById('heslo-input').value || '';
+  if(!mail || !heslo){ showAuthError('Vyplň e-mail i heslo.'); return; }
+  if(!fbAuth){ showAuthError('Přihlášení není nastavené.'); return; }
+  fbAuth.signInWithEmailAndPassword(mail, heslo)
+    .catch(function(e){
+      var k = e && e.code;
+      if(k === 'auth/user-not-found' || k === 'auth/invalid-credential'){
+        showAuthError('Účet neexistuje, nebo nesedí heslo. Zakládáš se poprvé? Použij „Vytvořit účet".');
+      } else if(k === 'auth/wrong-password'){ showAuthError('Nesprávné heslo.'); }
+      else if(k === 'auth/invalid-email'){ showAuthError('Tohle není platný e-mail.'); }
+      else { showAuthError('Přihlášení se nepovedlo: ' + ((e && e.message) || e)); }
+    });
+}
+function registerEmail(){
+  var mail = (document.getElementById('mail-input').value || '').trim();
+  var heslo = document.getElementById('heslo-input').value || '';
+  var jmeno = (document.getElementById('mail-jmeno-input').value || '').trim();
+  if(!mail || !heslo){ showAuthError('Vyplň e-mail i heslo.'); return; }
+  if(heslo.length < 6){ showAuthError('Heslo musí mít aspoň 6 znaků.'); return; }
+  if(jmeno.split(/\s+/).length < 2){
+    showAuthError('Napiš celé jméno i příjmení — podle toho Tě administrátor pozná.'); return;
+  }
+  if(!fbAuth){ showAuthError('Přihlášení není nastavené.'); return; }
+  fbAuth.createUserWithEmailAndPassword(mail, heslo)
+    .then(function(res){
+      try { res.user.updateProfile({ displayName: jmeno }); } catch(e){}
+      completeLogin(res.user, jmeno);
+    })
+    .catch(function(e){
+      var k = e && e.code;
+      if(k === 'auth/email-already-in-use'){ showAuthError('Na tenhle e-mail už účet existuje — přihlas se heslem.'); }
+      else if(k === 'auth/weak-password'){ showAuthError('Heslo je moc slabé, dej aspoň 6 znaků.'); }
+      else if(k === 'auth/invalid-email'){ showAuthError('Tohle není platný e-mail.'); }
+      else { showAuthError('Založení účtu se nepovedlo: ' + ((e && e.message) || e)); }
+    });
+}
 
 function signInWithGoogle(){
   if(!fbAuth){ showAuthError('Přihlášení zatím není nastavené (chybí Firebase projekt).'); return; }
@@ -365,18 +436,26 @@ function signInWithGoogle(){
 function signOutUser(){
   try { if(fbAuth) fbAuth.signOut(); } catch(e){}
   if(isDemoMode()){ localStorage.removeItem('pokladky_demo_user'); }
+  localStorage.removeItem('pokladky_jmeno');
+  localStorage.removeItem('pokladky_telefon');
   location.reload();
 }
 
 /* Dokončení přihlášení — společné pro Google i demo režim. */
-function completeLogin(user, nameOverride){
-  var name = nameOverride || user.displayName || (user.email ? user.email.split('@')[0] : 'uživatel');
+function completeLogin(user, nameOverride, phoneOverride){
+  var name = nameOverride || user.displayName || localStorage.getItem('pokladky_jmeno') ||
+             (user.email ? user.email.split('@')[0] : 'uživatel');
+  var tel  = phoneOverride || user.phoneNumber || localStorage.getItem('pokladky_telefon') || '';
   window.currentUser = {
-    uid: user.uid, name: name, email: user.email || '',
+    uid: user.uid, name: name, email: user.email || '', phone: tel,
     photo: user.photoURL || ''
   };
+  var zpusob = user.isAnonymous ? 'telefon'
+             : ((user.providerData || []).some(function(x){ return x && x.providerId === 'google.com'; }) ? 'google' : 'email');
+  window.currentUser.zpusob = zpusob;
   var upd = { uid:user.uid, name:name, email:window.currentUser.email,
-              photo:window.currentUser.photo, lastSeen:Date.now() };
+              photo:window.currentUser.photo, zpusob:zpusob, lastSeen:Date.now() };
+  if(tel) upd.phone = tel;
   db.ref('uzivatele/' + user.uid).update(upd);
 
   db.ref('uzivatele/' + user.uid).once('value').then(function(snap){
@@ -440,9 +519,15 @@ function _enterApp(){
 function loadAllUsers(){
   db.ref('uzivatele').on('value', function(snap){
     window.allUsers = snap.val() || {};
-    window._usersLoaded = true;
+    window._usersLoaded = snap.exists();          // prázdná/nenačtená DB nikoho neodhlásí
     if(isBlocked()){ showToast('Přístup byl zablokován.', 6000); setTimeout(signOutUser, 1500); return; }
+    // Administrátor mi smazal účet, zatímco appka běží.
+    if(snap.exists() && myUid() && !window.allUsers[myUid()] && !jeAdminEmail((window.currentUser||{}).email)){
+      showToast('Tvůj účet odstranil administrátor.', 4000);
+      setTimeout(signOutUser, 1800); return;
+    }
     applyPermsToUI();
+    updateSchvaleniBadge();
     if(typeof renderSpravaUzivatelu === 'function' && document.getElementById('sprava-modal').classList.contains('open')) renderSpravaUzivatelu();
   });
 }
@@ -498,7 +583,7 @@ function bootApp(){
     fbAuth.getRedirectResult().catch(function(){});
   }
   fbAuth.onAuthStateChanged(function(user){
-    if(user) completeLogin(user);
+    if(user) completeLogin(user, user.isAnonymous ? localStorage.getItem('pokladky_jmeno') : null);
     else { window.currentUser = null; document.getElementById('auth-gate').classList.remove('hide'); showMainView(); }
   });
 }
@@ -511,17 +596,41 @@ function bootApp(){
  * (dispečink a objednávky místo široké tabulky sázejí karty po dnech). */
 function jeMobil(){ return window.innerWidth < 760; }
 
+/* Kolik lidí čeká na schválení. Vidí to jen ten, kdo je smí schvalovat. */
+function pocetCekajicich(){
+  if(!hasPerm('sprava')) return 0;
+  var n = 0;
+  Object.keys(window.allUsers || {}).forEach(function(uid){
+    var u = window.allUsers[uid] || {};
+    if(u.approved !== true && !u.blocked) n++;
+  });
+  return n;
+}
+/* Rozsvítí upozornění na čekající: u avatara a na záložce Více. */
+function updateSchvaleniBadge(){
+  var n = pocetCekajicich();
+  [['badge-schvaleni', 'user-badge'], ['badge-vice', null]].forEach(function(par){
+    var el = document.getElementById(par[0]); if(!el) return;
+    el.textContent = n > 9 ? '9+' : n;
+    el.style.display = n ? 'flex' : 'none';
+  });
+  if(typeof renderDnes === 'function' && window.currentView === 'dnes') renderDnes();
+}
+
 /* Odznak uživatele v hlavičce — iniciály, nebo profilová fotka z Googlu. */
 function vykresliOdznakUzivatele(){
   var el = document.getElementById('user-badge'); if(!el) return;
   var u = window.currentUser || {};
+  var vnitrek;
   if(u.photo){
-    el.innerHTML = '<img src="' + escapeHtml(u.photo) + '" alt="">';
+    vnitrek = '<img src="' + escapeHtml(u.photo) + '" alt="">';
   } else {
     var casti = String(u.name || '?').trim().split(/\s+/);
     var ini = (casti[0] || '?').charAt(0) + (casti.length > 1 ? casti[casti.length-1].charAt(0) : '');
-    el.innerHTML = '<span class="ini">' + escapeHtml(ini.toUpperCase()) + '</span>';
+    vnitrek = '<span class="ini">' + escapeHtml(ini.toUpperCase()) + '</span>';
   }
+  el.innerHTML = vnitrek + '<span class="odznak" id="badge-schvaleni"></span>';
+  updateSchvaleniBadge();
 }
 
 /* Ikony do prvků, které jsou napevno v index.html. */
@@ -537,7 +646,8 @@ function vykresliStatickeIkony(){
                   (m[0] === 'tab-dispecink' ? '<span class="tb-badge" id="badge-kolize"></span>' : '');
   });
   var vice = document.querySelector('#tabbar button[data-view="vice"]');
-  if(vice) vice.innerHTML = ico('menu', 22) + '<span>Více</span>';
+  if(vice) vice.innerHTML = ico('menu', 22) + '<span>Více</span>' +
+                            '<span class="tb-badge" id="badge-vice"></span>';
 
   document.querySelectorAll('.modal-x').forEach(function(b){ b.innerHTML = ico('zavrit', 20); });
   var znak = document.getElementById('auth-znak');   if(znak) znak.innerHTML = ico('vrstvy', 28);

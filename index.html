@@ -21,7 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Verze v ?v= se zvedá při KAŽDÉM nasazení, jinak telefon drží staré moduly. -->
-<link rel="stylesheet" href="css/app.css?v=3">
+<link rel="stylesheet" href="css/app.css?v=4">
 </head>
 <body>
 
@@ -65,10 +65,52 @@
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
         <span>Přihlásit se Googlem</span>
       </button>
+      <div class="auth-nebo">nebo</div>
+      <button class="btn btn-siroky" onclick="showPhoneView()">Jménem a telefonem</button>
+      <button class="btn btn-siroky" onclick="showEmailView()">E-mailem a heslem</button>
       <div class="auth-pozn">
-        Máš-li pracovní Gmail, klepni nahoře. Po prvním přihlášení Tě musí schválit
-        administrátor — pak uvidíš stavby, ke kterým Ti dá přístup.
+        Google je nejrychlejší, ale funguje jen s účtem Google. Kdo ho nemá, ať zvolí
+        některou z dalších možností. Po prvním přihlášení Tě musí schválit administrátor —
+        pak uvidíš stavby, ke kterým Ti dá přístup.
       </div>
+    </div>
+
+    <div class="auth-view" id="auth-view-telefon">
+      <p style="text-align:left">Zadej svoje telefonní číslo:</p>
+      <input type="tel" id="tel-input" class="auth-input" placeholder="+420 600 123 456"
+             autocomplete="tel" inputmode="tel">
+      <button class="auth-google" onclick="startPhoneLogin()">Pokračovat</button>
+      <div class="auth-pozn">Žádná SMS ani ověřovací kód. Napiš číslo, pak celé jméno.</div>
+      <button class="btn btn-cisty btn-s" onclick="showMainView()">Zpět</button>
+    </div>
+
+    <div class="auth-view" id="auth-view-jmeno">
+      <p style="text-align:left">Jak se jmenuješ?</p>
+      <input type="text" id="jmeno-input" class="auth-input" placeholder="Jméno a příjmení"
+             autocapitalize="words" autocomplete="name">
+      <div class="auth-pozn auth-pozor">
+        <b>Napiš celé jméno i příjmení.</b> Žádné přezdívky ani zkratky — podle jména Tě
+        administrátor pozná a schválí. Bez plného jména může být přístup odmítnut.
+      </div>
+      <button class="auth-google" onclick="savePhoneUserName()">Vstoupit</button>
+      <button class="btn btn-cisty btn-s" onclick="showPhoneView()">Zpět</button>
+    </div>
+
+    <div class="auth-view" id="auth-view-email">
+      <p style="text-align:left">Přihlášení e-mailem:</p>
+      <input type="email" id="mail-input" class="auth-input" placeholder="e-mail"
+             autocomplete="email" inputmode="email" autocapitalize="off">
+      <input type="password" id="heslo-input" class="auth-input" placeholder="heslo"
+             autocomplete="current-password">
+      <button class="auth-google" onclick="signInEmail()">Přihlásit se</button>
+      <div class="auth-oddel">zakládáš účet poprvé?</div>
+      <input type="text" id="mail-jmeno-input" class="auth-input" placeholder="Jméno a příjmení"
+             autocapitalize="words" autocomplete="name">
+      <button class="btn btn-siroky" onclick="registerEmail()">Vytvořit účet</button>
+      <div class="auth-pozn">
+        Funguje s jakýmkoli e-mailem. Heslo aspoň 6 znaků. Nový účet musí schválit administrátor.
+      </div>
+      <button class="btn btn-cisty btn-s" onclick="showMainView()">Zpět</button>
     </div>
 
     <div class="auth-view" id="auth-view-pending">
@@ -221,18 +263,18 @@
 </div>
 
 <!-- ══ Moduly ════════════════════════════════════════════════════════════ -->
-<script src="js/ikony.js?v=3"></script>
-<script src="js/core.js?v=3"></script>
-<script src="js/mapa.js?v=3"></script>
-<script src="js/ciselniky.js?v=3"></script>
-<script src="js/stavby.js?v=3"></script>
-<script src="js/pokladka.js?v=3"></script>
-<script src="js/plan.js?v=3"></script>
-<script src="js/dispecink.js?v=3"></script>
-<script src="js/objednavky.js?v=3"></script>
-<script src="js/dnes.js?v=3"></script>
-<script src="js/sprava.js?v=3"></script>
-<script src="js/ukazka.js?v=3"></script>
+<script src="js/ikony.js?v=4"></script>
+<script src="js/core.js?v=4"></script>
+<script src="js/mapa.js?v=4"></script>
+<script src="js/ciselniky.js?v=4"></script>
+<script src="js/stavby.js?v=4"></script>
+<script src="js/pokladka.js?v=4"></script>
+<script src="js/plan.js?v=4"></script>
+<script src="js/dispecink.js?v=4"></script>
+<script src="js/objednavky.js?v=4"></script>
+<script src="js/dnes.js?v=4"></script>
+<script src="js/sprava.js?v=4"></script>
+<script src="js/ukazka.js?v=4"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function(){
     vykresliStatickeIkony();
