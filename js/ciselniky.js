@@ -15,12 +15,20 @@ window.ciselniky = { lide:{}, stroje:{}, party:{}, obalovny:{}, smesi:{}, doprav
 var STROJ_TYPY = ['finišer','válec','fréza','nakladač','vůz (vana)','vůz (osmikolka)',
                   'osobní auto','postřikovač','kropička','jiné'];
 var VRSTVY = [
-  { k:'obrusna',   l:'obrusná' },
-  { k:'loziska',   l:'ložisková' },
-  { k:'podkladni', l:'podkladní' },
-  { k:'postrik',   l:'spojovací postřik' }
+  { k:'obrusna',    l:'obrusná' },
+  { k:'lozni',      l:'ložní' },
+  { k:'podkladni',  l:'podkladní' },
+  { k:'vyrovnavka', l:'vyrovnávka' },
+  { k:'sanace',     l:'sanace' }
 ];
-function vrstvaLabel(k){ var v = VRSTVY.filter(function(x){ return x.k===k; })[0]; return v ? v.l : (k||''); }
+/* Zpětná kompatibilita: dřív tu byla „ložisková" a postřik jako vrstva. */
+var VRSTVY_STARE = { loziska:'lozni', postrik:'' };
+function vrstvaKlic(k){ return (VRSTVY_STARE[k] !== undefined) ? VRSTVY_STARE[k] : k; }
+function vrstvaLabel(k){
+  k = vrstvaKlic(k);
+  var v = VRSTVY.filter(function(x){ return x.k===k; })[0];
+  return v ? v.l : (k||'');
+}
 
 /* ── Definice číselníků ─────────────────────────────────────────────────
  * Jeden popis → seznam, formulář, import i našeptávání. Přidat pole = přidat
@@ -56,15 +64,14 @@ var CIS_DEFS = {
     fields:[
       { k:'nazev',     l:'Název party', req:true, hint:'Parta 1 – Novák' },
       { k:'vedouciId', l:'Vedoucí (mistr)', ref:'lide' },
-      { k:'vykonTh',   l:'Výkon party (t/h)', type:'number', hint:'kolik tun za hodinu položí – pro výpočet aut' },
       { k:'lide',      l:'Osazenstvo',  multi:'lide' },
       { k:'stroje',    l:'Stroje party', multi:'stroje' }
     ],
     title:function(r){ return r.nazev; },
     sub:  function(r){
       var n = (r.lide||[]).length, s = (r.stroje||[]).length;
-      return [ cisTitle('lide', r.vedouciId), n ? n+' lidí' : '', s ? s+' strojů' : '',
-               r.vykonTh ? fmtNum(r.vykonTh,0)+' t/h' : '' ].filter(Boolean).join(' · ');
+      return [ cisTitle('lide', r.vedouciId), n ? n+' lidí' : '', s ? s+' strojů' : '' ]
+             .filter(Boolean).join(' · ');
     }
   },
   obalovny: {
@@ -324,13 +331,13 @@ var SEED_SMESI = [
   { kod:'ACO 8',    vrstva:'obrusná',    objHmotnost:2.4, tloustkaMin:25, tloustkaMax:40 },
   { kod:'ACO 11+',  vrstva:'obrusná',    objHmotnost:2.4, tloustkaMin:35, tloustkaMax:50 },
   { kod:'ACO 11 S', vrstva:'obrusná',    objHmotnost:2.4, tloustkaMin:35, tloustkaMax:50 },
-  { kod:'ACL 16+',  vrstva:'ložisková',  objHmotnost:2.4, tloustkaMin:50, tloustkaMax:70 },
-  { kod:'ACL 16 S', vrstva:'ložisková',  objHmotnost:2.4, tloustkaMin:50, tloustkaMax:80 },
-  { kod:'ACL 22 S', vrstva:'ložisková',  objHmotnost:2.4, tloustkaMin:60, tloustkaMax:90 },
+  { kod:'ACL 16+',  vrstva:'ložní',  objHmotnost:2.4, tloustkaMin:50, tloustkaMax:70 },
+  { kod:'ACL 16 S', vrstva:'ložní',  objHmotnost:2.4, tloustkaMin:50, tloustkaMax:80 },
+  { kod:'ACL 22 S', vrstva:'ložní',  objHmotnost:2.4, tloustkaMin:60, tloustkaMax:90 },
   { kod:'ACP 16+',  vrstva:'podkladní',  objHmotnost:2.4, tloustkaMin:50, tloustkaMax:80 },
   { kod:'ACP 22+',  vrstva:'podkladní',  objHmotnost:2.4, tloustkaMin:70, tloustkaMax:110 },
   { kod:'ACP 22 S', vrstva:'podkladní',  objHmotnost:2.4, tloustkaMin:70, tloustkaMax:120 },
-  { kod:'VMT 22',   vrstva:'ložisková',  objHmotnost:2.4, tloustkaMin:60, tloustkaMax:90 }
+  { kod:'VMT 22',   vrstva:'ložní',  objHmotnost:2.4, tloustkaMin:60, tloustkaMax:90 }
 ];
 var SEED_STROJE = [
   { nazev:'Finišer',        typ:'finišer',        servisIntervalMth:500 },

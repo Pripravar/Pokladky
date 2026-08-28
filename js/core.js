@@ -652,13 +652,14 @@ function vykresliStatickeIkony(){
 
   document.querySelectorAll('.modal-x').forEach(function(b){ b.innerHTML = ico('zavrit', 20); });
   var znak = document.getElementById('auth-znak');   if(znak) znak.innerHTML = ico('vrstvy', 28);
+  var imp = document.getElementById('ico-import');   if(imp) imp.innerHTML = ico('nahrat', 17);
   var pend = document.getElementById('pending-ico'); if(pend) pend.innerHTML = ico('presypaci', 40);
 
   var par = [
     ['btn-nova-stavba','plus','Nová stavba'], ['cis-imp-btn','nahrat','Import z Excelu'],
     ['cis-seed-btn','vrstvy','Vložit běžnou sadu'], ['cis-back','zpet','Zpět na seznam'],
     ['cis-del','kos','Smazat'], ['st-delete','kos','Smazat stavbu'],
-    ['osa-undo','zpet','Zpět bod'], ['osa-clear','kos','Vymazat osu']
+    ['osa-undo','zpet','Zpět bod'], ['osa-clear','kos','Vymazat trasu']
   ];
   par.forEach(function(p){
     var b = document.getElementById(p[0]); if(!b) return;

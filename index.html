@@ -21,7 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Verze v ?v= se zvedá při KAŽDÉM nasazení, jinak telefon drží staré moduly. -->
-<link rel="stylesheet" href="css/app.css?v=7">
+<link rel="stylesheet" href="css/app.css?v=8">
 </head>
 <body>
 
@@ -148,17 +148,28 @@
     <label class="pole"><span class="popis">Objednatel</span>
       <input class="f" id="st-objednatel" placeholder="ŘSD ČR / KSÚS / obec"></label>
 
-    <div class="sekce"><span class="sekce-t">Úsek v mapě</span></div>
-    <div class="napoveda" style="margin-top:0">
-      Klepni do mapy na <b>začátek úseku</b>, pak na <b>konec</b>. Pro zatáčky přidej mezilehlé body.
-      Staničení na začátku zadej níž — zbytek si appka dopočítá sama.
+    <div class="sekce"><span class="sekce-t">Trasa stavby</span></div>
+
+    <button class="btn btn-siroky" onclick="document.getElementById('osa-soubor').click()">
+      <span id="ico-import"></span><span>Nahrát trasu z dokumentace (GPX, KML)</span></button>
+    <div class="napoveda" style="margin:8px 0 16px">
+      Nejpřesnější cesta. Export trasy z Mapy.cz, z projektu nebo ze zaměření.
+      Nemáš-li soubor, naklikej trasu níž v mapě.
     </div>
+
+    <div class="segmenty">
+      <button id="seg-trasa" class="on" onclick="osaRezim('trasa')">Začátek a konec</button>
+      <button id="seg-rucne" onclick="osaRezim('rucne')">Vlastní body</button>
+    </div>
+    <div class="napoveda" id="osa-navod" style="margin:-8px 0 12px"></div>
+
     <div class="mapa-box" id="osa-map"></div>
     <div class="rada" style="margin-top:8px">
-      <button class="btn btn-s" onclick="osaUndo()" id="osa-undo">Zpět bod</button>
-      <button class="btn btn-s" onclick="osaClear()" id="osa-clear">Vymazat osu</button>
+      <button class="btn btn-s" onclick="osaZpet()" id="osa-undo">Zpět bod</button>
+      <button class="btn btn-s" onclick="osaClear()" id="osa-clear">Vymazat trasu</button>
     </div>
     <div class="mensi" id="osa-info" style="margin:12px 0;line-height:1.6"></div>
+
     <label class="pole"><span class="popis">Staničení na začátku úseku (km)</span>
       <input class="f" id="st-kmstart" type="number" step="any" inputmode="decimal" value="0" oninput="osaUpdateInfo()"></label>
 
@@ -246,6 +257,7 @@
     <div id="vazni-edit" style="display:none"></div>
   </div>
 </div>
+<input type="file" id="osa-soubor" accept=".gpx,.kml,.txt,.csv,text/xml,application/gpx+xml" style="display:none" onchange="osaSouborVybran(this)">
 <input type="file" id="vazni-foto-in"  accept="image/*" capture="environment" style="display:none" onchange="vazniFotoVybrana(this)">
 <input type="file" id="vazni-foto-lib" accept="image/*" style="display:none" onchange="vazniFotoVybrana(this)">
 <div id="vazni-lupa" onclick="this.style.display='none'"
@@ -277,19 +289,19 @@
 </div>
 
 <!-- ══ Moduly ════════════════════════════════════════════════════════════ -->
-<script src="js/ikony.js?v=7"></script>
-<script src="js/core.js?v=7"></script>
-<script src="js/mapa.js?v=7"></script>
-<script src="js/ciselniky.js?v=7"></script>
-<script src="js/stavby.js?v=7"></script>
-<script src="js/pokladka.js?v=7"></script>
-<script src="js/plan.js?v=7"></script>
-<script src="js/dispecink.js?v=7"></script>
-<script src="js/objednavky.js?v=7"></script>
-<script src="js/vazni.js?v=7"></script>
-<script src="js/dnes.js?v=7"></script>
-<script src="js/sprava.js?v=7"></script>
-<script src="js/ukazka.js?v=7"></script>
+<script src="js/ikony.js?v=8"></script>
+<script src="js/core.js?v=8"></script>
+<script src="js/mapa.js?v=8"></script>
+<script src="js/ciselniky.js?v=8"></script>
+<script src="js/stavby.js?v=8"></script>
+<script src="js/pokladka.js?v=8"></script>
+<script src="js/plan.js?v=8"></script>
+<script src="js/dispecink.js?v=8"></script>
+<script src="js/objednavky.js?v=8"></script>
+<script src="js/vazni.js?v=8"></script>
+<script src="js/dnes.js?v=8"></script>
+<script src="js/sprava.js?v=8"></script>
+<script src="js/ukazka.js?v=8"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function(){
     vykresliStatickeIkony();

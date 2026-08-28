@@ -93,7 +93,7 @@ function openStavbaSwitcher(){
 function openNovaStavba(){
   if(!needPerm('stavby')) return;
   window._editStavbaId = '';
-  window._osaBody = [];
+  window._osaBody = []; window._osaKotvy = []; window._osaZdroj = ''; window._osaRezim = 'trasa';
   document.getElementById('stavba-form-title').textContent = 'Nová stavba';
   ['st-nazev','st-kod','st-objednatel'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('st-kmstart').value = '0';
@@ -101,13 +101,16 @@ function openNovaStavba(){
   document.getElementById('st-delete').style.display = 'none';
   closeModal('stavba-modal');
   openModal('stavba-form-modal');
-  osaMapInit(); osaRedraw();
+  osaMapInit(); renderOsaOvladani(); osaRedraw();
 }
 function openStavbaEdit(sid){
   if(!isStavbaAdmin(sid)){ showToast('Upravovat stavbu smí jen její zakladatel nebo vedení.', 3200); return; }
   var s = window.allStavby[sid] || {};
   window._editStavbaId = sid;
   window._osaBody = (s.osa && s.osa.body) ? s.osa.body.slice() : [];
+  window._osaKotvy = window._osaBody.length >= 2 ? [window._osaBody[0], window._osaBody[window._osaBody.length-1]] : [];
+  window._osaZdroj = (s.osa && s.osa.zdroj) || (window._osaBody.length ? 'rucne' : '');
+  window._osaRezim = 'trasa';
   document.getElementById('stavba-form-title').textContent = 'Úprava stavby';
   document.getElementById('st-nazev').value = s.nazev || '';
   document.getElementById('st-kod').value = s.kod || '';
@@ -117,7 +120,7 @@ function openStavbaEdit(sid){
   document.getElementById('st-delete').style.display = '';
   closeModal('stavba-modal');
   openModal('stavba-form-modal');
-  osaMapInit();
+  osaMapInit(); renderOsaOvladani();
   setTimeout(function(){
     osaRedraw();
     if(window._osaMap && window._osaBody.length >= 2) window._osaMap.fitBounds(window._osaBody, { padding:[30,30] });
@@ -136,7 +139,8 @@ function saveStavba(){
     kod: (document.getElementById('st-kod').value || '').trim(),
     objednatel: (document.getElementById('st-objednatel').value || '').trim(),
     stav: document.getElementById('st-stav').value,
-    osa: { body: body, kmStart: kmStart, kmEnd: +(kmStart + delka/1000).toFixed(3), delkaM: Math.round(delka) }
+    osa: { body: body, kmStart: kmStart, kmEnd: +(kmStart + delka/1000).toFixed(3),
+           delkaM: Math.round(delka), zdroj: window._osaZdroj || 'rucne' }
   };
   if(!window._editStavbaId){
     rec.vlastnikUid = myUid();
@@ -167,4 +171,16 @@ function deleteStavba(){
   window.activeStavbaId = '';
   localStorage.removeItem('pokladky_stavba');
   showToast('Stavba smazána.');
+}
+
+/* Přepínač způsobu zadání trasy + návod k němu. */
+function renderOsaOvladani(){
+  var t = document.getElementById('seg-trasa'), r = document.getElementById('seg-rucne');
+  if(t) t.classList.toggle('on', window._osaRezim !== 'rucne');
+  if(r) r.classList.toggle('on', window._osaRezim === 'rucne');
+  var n = document.getElementById('osa-navod');
+  if(n) n.innerHTML = (window._osaRezim === 'rucne')
+    ? 'Skládáš osu bod po bodu. Použij, jen když trasa po silnici nesedí — třeba u objížďky nebo sjezdu.'
+    : 'Klepni na <b>začátek</b> a pak na <b>konec</b> úseku. Trasu mezi nimi appka najde po silnici sama. ' +
+      'Kdyby vedla jinudy, klepni ještě do místa, kudy má jít.';
 }

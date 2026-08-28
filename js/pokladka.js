@@ -67,39 +67,67 @@ function plochaZTun(tuny, tloustkaMm, smesId){
   return (t > 0 && oh > 0) ? num(tuny) / (t * oh) : 0;
 }
 
-/* Návrh počtu aut. Vrací i mezivýsledky, ať je vidět, z čeho číslo vzniklo —
- * je to jen NÁVRH, poslední slovo má vždy stavbyvedoucí. */
+/* ── Doprava: kolik aut a kolik otoček ───────────────────────────────────
+ * Původně to počítalo z „výkonu party v t/h". Kolega Tomáš K. na tom ukázal
+ * chybu: výkon není vlastnost party. Je jiný každý den — podle finišeru,
+ * vzdálenosti obalovny, tloušťky a typu asfaltu i podle terénu (zatáčky,
+ * kopce, vjezdy, intravilán). Vyplňovat ho dopředu u party nedává smysl.
+ *
+ * Počítá se proto tak, jak se doprava objednává doopravdy: auta se berou
+ * NA POČET KUSŮ a k tomu se určí, kolikrát za den otočí obalovnu. Míň aut
+ * a víc otoček vyjde levněji, ale je to logisticky náročnější — proto appka
+ * nabídne varianty a rozhodnutí nechá na stavbyvedoucím.
+ * ────────────────────────────────────────────────────────────────────────── */
 var KOEF_SILNICE  = 1.3;   // vzdušná čára → skutečná délka po silnici
 var RYCHLOST_KMH  = 50;    // průměr plné a prázdné jízdy
 var NAKLADKA_H    = 0.25;  // 15 min na obalovně
 var VYKLADKA_H    = 0.20;  // 12 min u finišeru
-var VYKON_DEFAULT = 60;    // t/h, když parta nemá vyplněný výkon
 
-function navrhAut(p){
-  var out = { auta:null, duvod:'' };
-  var obalovna = cisGet('obalovny', p.obalovnaId);
-  var stavba   = window.allStavby[p.stavbaId];
-  if(!obalovna || !obalovna.lat){ out.duvod = 'obalovna nemá zadanou polohu'; return out; }
-  if(!stavba || !stavba.osa || !(stavba.osa.body||[]).length){ out.duvod = 'stavba nemá zakreslenou osu'; return out; }
+/* Vzdálenost obalovna → začátek stavby, po silnici (odhad). */
+function vzdalenostObalovny(p){
+  var o = cisGet('obalovny', p.obalovnaId);
+  var stavba = window.allStavby[p.stavbaId];
+  if(!o || !o.lat) return null;
+  if(!stavba || !stavba.osa || !(stavba.osa.body||[]).length) return null;
+  return haversine(stavba.osa.body[0], [num(o.lat), num(o.lng)]) / 1000 * KOEF_SILNICE;
+}
 
-  var parta   = cisGet('party', p.partaId);
-  var vykon   = (parta && num(parta.vykonTh)) || VYKON_DEFAULT;
-  var doprava = cisGet('dopravci', p.dopravceId);
-  var osmi    = (p.typAuta === 'osmikolka');
-  var nosnost = doprava ? num(osmi ? doprava.nosnostOsmikolka : doprava.nosnostVana) : 0;
-  if(!nosnost) nosnost = osmi ? 16 : 24;
+function nosnostVozu(p){
+  var d = cisGet('dopravci', p.dopravceId);
+  var osmi = (p.typAuta === 'osmikolka');
+  var n = d ? num(osmi ? d.nosnostOsmikolka : d.nosnostVana) : 0;
+  return n || (osmi ? 16 : 24);
+}
 
-  var vzdalKm = haversine(stavba.osa.body[0], [num(obalovna.lat), num(obalovna.lng)]) / 1000 * KOEF_SILNICE;
-  var jizdaH  = vzdalKm / RYCHLOST_KMH;
-  var cyklusH = 2*jizdaH + NAKLADKA_H + VYKLADKA_H;
+/* Vrátí rozbor dopravy: kolik odvozů je potřeba, jak dlouho trvá otočka
+ * a jaké jsou varianty počtu aut. */
+function rozborDopravy(p){
+  var out = { duvod:'' };
+  var tuny = num(p.tunyPlan);
+  if(!tuny){ out.duvod = 'doplníš tuny'; return out; }
+  var vzdal = vzdalenostObalovny(p);
+  if(vzdal === null){ out.duvod = 'doplníš obalovnu s polohou a trasu stavby'; return out; }
 
-  out.auta        = Math.max(1, Math.ceil(vykon * cyklusH / nosnost));
-  out.vzdalKm     = vzdalKm;
-  out.jizdaMin    = jizdaH * 60;
-  out.cyklusMin   = cyklusH * 60;
-  out.vykon       = vykon;
-  out.nosnost     = nosnost;
-  out.vykonZParty = !!(parta && num(parta.vykonTh));
+  var nosnost = nosnostVozu(p);
+  var jizdaH  = vzdal / RYCHLOST_KMH;
+  var otockaH = 2*jizdaH + NAKLADKA_H + VYKLADKA_H;
+
+  out.vzdalKm      = vzdal;
+  out.nosnost      = nosnost;
+  out.jizdaMin     = jizdaH * 60;
+  out.otockaMin    = otockaH * 60;
+  out.celkemOdvozu = Math.ceil(tuny / nosnost);
+  out.tuny         = tuny;
+
+  /* Varianty: kolik aut × kolik otoček na auto × za jak dlouho je navezeno. */
+  out.varianty = [];
+  for(var a = 1; a <= Math.min(12, out.celkemOdvozu); a++){
+    var otocek = Math.ceil(out.celkemOdvozu / a);
+    out.varianty.push({ aut:a, otocek:otocek, hodin: otocek * otockaH });
+  }
+  /* Doporučení: nejmíň aut, které to stihnou do konce směny (10 h). */
+  var vejdeSe = out.varianty.filter(function(v){ return v.hodin <= 10; });
+  out.doporuceno = (vejdeSe[0] || out.varianty[out.varianty.length-1] || {}).aut || null;
   return out;
 }
 
@@ -128,6 +156,7 @@ function pokladkaKartaHtml(p, opts){
   h += '</div>';
 
   h += '<div class="udaje">';
+  if(p.postrik) h += udajHtml('smes', 'včetně spojovacího postřiku');
   if(opts.sStavbou) h += udajHtml('stavba', escapeHtml(stavbaNazev(p.stavbaId)));
   if(kde)           h += udajHtml('misto',  escapeHtml(kde));
   h += udajHtml('parta', escapeHtml(cisTitle('party', p.partaId) || 'parta není vybraná'));
@@ -200,6 +229,9 @@ function renderPokladkaForm(){
        pole('Plocha m²',   '<input class="f" type="number" inputmode="decimal" id="pk-plocha" value="' + escapeHtml(p.plochaM2||'') + '" oninput="pokPrepocetZPlochy()">') +
        pole('Tuny',        '<input class="f" type="number" inputmode="decimal" id="pk-tuny" value="' + escapeHtml(p.tunyPlan||'') + '" oninput="pokPrepocetZTun()">') + '</div>';
   h += '<div class="napoveda">Vyplň, co máš po ruce — plochu, nebo rovnou tuny. Druhé číslo si appka dopočítá.</div>';
+  h += '<label class="vyber-box" style="display:flex;align-items:center;gap:10px;padding:12px;margin-bottom:16px;cursor:pointer">' +
+       '<input type="checkbox" id="pk-postrik"' + (p.postrik ? ' checked' : '') + ' onchange="pokUpd()">' +
+       '<span>Součástí je <b>spojovací postřik</b></span></label>';
 
   h += '<div class="mrizka-2">' +
        pole('Staničení od (km)', '<input class="f" type="number" step="any" inputmode="decimal" id="pk-kmod" value="' + escapeHtml((p.usek&&p.usek.kmOd)||'') + '">') +
@@ -268,6 +300,8 @@ function pokRead(){
   p.typAuta    = g('pk-typauta');
   p.dopravaAut = num(g('pk-auta'), null);
   p.casStart   = g('pk-cas');
+  var cb = document.getElementById('pk-postrik');
+  p.postrik    = !!(cb && cb.checked);
   p.poznamka   = g('pk-poznamka');
   p.stav       = g('pk-stav') || 'navrh';
   return p;
@@ -297,32 +331,45 @@ function pokPrepocetZTun(){
 
 function pokRenderNavrh(){
   var el = document.getElementById('pk-navrh'); if(!el) return;
-  var p = window._pok, n = navrhAut(p);
-  if(n.auta === null){
-    el.innerHTML = '<div class="napoveda" style="margin:0">Počet aut appka navrhne, jakmile bude ' +
-                   escapeHtml(n.duvod) + '.</div>';
+  var p = window._pok, r = rozborDopravy(p);
+  if(!r.varianty){
+    el.innerHTML = '<div class="napoveda" style="margin:0">Rozvoz appka spočítá, až ' +
+                   escapeHtml(r.duvod) + '.</div>';
     return;
   }
-  var hodin = p.tunyPlan ? (num(p.tunyPlan) / n.vykon) : null;
-  el.innerHTML =
-    '<div class="karta" style="margin:0;background:var(--surface-2)">' +
-      '<div style="display:flex;align-items:center;gap:12px">' +
-        '<div style="flex:1"><div class="metrika-h">' + n.auta +
-          '<span class="jed">' + (p.typAuta==='osmikolka'?'osmikolek':'van') + '</span></div>' +
-          '<div class="metrika-p">návrh</div></div>' +
-        '<button class="btn btn-s" onclick="pokPouzitNavrh(' + n.auta + ')">' + ico('fajfka',15) + '<span>Použít</span></button>' +
-      '</div>' +
-      '<div class="udaje maly">' +
-        udajHtml('obalovna', fmtNum(n.vzdalKm,0) + ' km · jízda ' + fmtNum(n.jizdaMin,0) + ' min · obrátka <b>' + fmtNum(n.cyklusMin,0) + ' min</b>') +
-        udajHtml('stroj', 'výkon ' + fmtNum(n.vykon,0) + ' t/h' + (n.vykonZParty ? '' : ' (odhad — doplň u party)') +
-                 ' · nosnost ' + fmtNum(n.nosnost,0) + ' t' + (hodin ? ' · pokládka ~' + fmtNum(hodin,1) + ' h' : '')) +
-      '</div>' +
-    '</div>';
+  var h = '<div class="karta" style="margin:0;background:var(--surface-2)">';
+  h += '<div class="metriky">' +
+       '<div><div class="metrika-h">' + r.celkemOdvozu + '</div><div class="metrika-p">odvozů celkem</div></div>' +
+       '<div><div class="metrika-h">' + fmtNum(r.otockaMin,0) + '<span class="jed">min</span></div>' +
+         '<div class="metrika-p">jedna otočka</div></div>' +
+       '<div><div class="metrika-h">' + fmtNum(r.vzdalKm,0) + '<span class="jed">km</span></div>' +
+         '<div class="metrika-p">na obalovnu</div></div></div>';
+
+  h += '<div class="napoveda" style="margin:4px 0 10px">Míň aut a víc otoček vyjde levněji, ' +
+       'ale je to náročnější na sladění. Vyber, co dává smysl pro tenhle den.</div>';
+
+  h += '<div class="tbl-obal" style="background:none"><table class="tbl"><tr>' +
+       '<th>Aut</th><th>Otoček</th><th>Navezeno za</th><th></th></tr>';
+  r.varianty.forEach(function(v){
+    var dop = (v.aut === r.doporuceno);
+    var dlouho = v.hodin > 10;
+    h += '<tr' + (dop ? ' style="background:var(--ok-soft)"' : (dlouho ? ' class="zly"' : '')) + '>' +
+         '<td><b>' + v.aut + '×</b> ' + (p.typAuta === 'osmikolka' ? 'osmikolka' : 'vana') + '</td>' +
+         '<td>' + v.otocek + '</td>' +
+         '<td>' + fmtNum(v.hodin,1) + ' h' + (dlouho ? ' <span class="tichy-2">přes směnu</span>' : '') + '</td>' +
+         '<td><button class="btn btn-s" onclick="pokPouzitNavrh(' + v.aut + ')">Vybrat</button></td></tr>';
+  });
+  h += '</table></div>';
+  h += '<div class="napoveda" style="margin:10px 0 0">Počítáno na nosnost <b>' + fmtNum(r.nosnost,0) +
+       ' t</b>, jízdu ' + fmtNum(r.jizdaMin,0) + ' min a nakládku s vykládkou 27 min. ' +
+       'Zeleně je nejmenší počet aut, který to stihne do deseti hodin.</div>';
+  el.innerHTML = h + '</div>';
 }
 function pokPouzitNavrh(n){
-  document.getElementById('pk-auta').value = n;
+  var el = document.getElementById('pk-auta');
+  if(el) el.value = n;
   window._pok.dopravaAut = n;
-  showToast('Doplněno ' + n + ' aut. Můžeš to přepsat.');
+  showToast('Nastaveno ' + n + ' aut.');
 }
 
 function poslednPokladka(sid){
@@ -332,7 +379,8 @@ function poslednPokladka(sid){
 function pokladkaJakoMinule(){
   var m = poslednPokladka(window._pok.stavbaId); if(!m) return;
   var p = window._pok;
-  ['vrstva','smesId','tloustkaMm','partaId','obalovnaId','dopravceId','typAuta','casStart','smena'].forEach(function(k){ p[k] = m[k]; });
+  ['vrstva','smesId','tloustkaMm','partaId','obalovnaId','dopravceId','typAuta','casStart','smena','postrik']
+    .forEach(function(k){ p[k] = m[k]; });
   if(m.usek && m.usek.kmDo) p.usek = { kmOd:m.usek.kmDo, kmDo:null, popis:'' };   // navazuje tam, kde minule skončil
   p.plochaM2 = null; p.tunyPlan = null;
   renderPokladkaForm();

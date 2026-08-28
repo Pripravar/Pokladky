@@ -32,9 +32,9 @@ function naplnUkazkovaData(){
     S5:{nazev:'Vögele S1300 (malý)',typ:'finišer', spz:'5IJ 5555', mth:1120, servisIntervalMth:500, posledniServisMth:900}
   };
   var party = {
-    P1:{nazev:'Parta 1 – Novák',  vedouciId:'L3', vykonTh:70, lide:['L1','L2','L3'], stroje:['S1','S2']},
-    P2:{nazev:'Parta 2 – Dvořák', vedouciId:'L2', vykonTh:55, lide:['L2','L4'],      stroje:['S2','S3']},
-    P3:{nazev:'Parta 3 – malá',   vedouciId:'L4', vykonTh:35, lide:['L4','L5'],      stroje:['S5','S3']}
+    P1:{nazev:'Parta 1 – Novák',  vedouciId:'L3', lide:['L1','L2','L3'], stroje:['S1','S2']},
+    P2:{nazev:'Parta 2 – Dvořák', vedouciId:'L2', lide:['L2','L4'],      stroje:['S2','S3']},
+    P3:{nazev:'Parta 3 – malá',   vedouciId:'L4', lide:['L4','L5'],      stroje:['S5','S3']}
   };
   var obalovny = {
     O1:{nazev:'Obalovna Chrudim',    lat:49.9510, lng:15.7950, kapacitaTden:600, kontakt:'+420 601 111 222'},
@@ -82,7 +82,7 @@ function naplnUkazkovaData(){
     { id:'PK1', stavbaId:'ST1', datum:po, vrstva:'podkladni', smesId:smes('ACP 22+'), tloustkaMm:80,
       plochaM2:3200, tunyPlan:614, usek:{kmOd:12.5,kmDo:12.9,popis:'levý pruh'}, partaId:'P1',
       obalovnaId:'O1', dopravceId:'D1', typAuta:'vana', dopravaAut:5, casStart:'06:00', stav:'hotovo' },
-    { id:'PK2', stavbaId:'ST1', datum:ut, vrstva:'loziska', smesId:smes('ACL 16+'), tloustkaMm:50,
+    { id:'PK2', stavbaId:'ST1', datum:ut, vrstva:'lozni', smesId:smes('ACL 16+'), tloustkaMm:50,
       plochaM2:5000, tunyPlan:600, usek:{kmOd:12.5,kmDo:13.2,popis:'pravý pruh'}, partaId:'P1',
       obalovnaId:'O1', dopravceId:'D1', typAuta:'vana', dopravaAut:5, casStart:'06:00', stav:'potvrzeno' },
     { id:'PK3', stavbaId:'ST2', datum:ut, vrstva:'obrusna', smesId:smes('ACO 11+'), tloustkaMm:40,
@@ -91,7 +91,7 @@ function naplnUkazkovaData(){
     { id:'PK4', stavbaId:'ST2', datum:st, vrstva:'obrusna', smesId:smes('ACO 11+'), tloustkaMm:40,
       plochaM2:3000, tunyPlan:288, usek:{kmOd:0.5,kmDo:1.1,popis:''}, partaId:'P2',
       obalovnaId:'O1', dopravceId:'D1', typAuta:'vana', dopravaAut:3, casStart:'06:00', stav:'potvrzeno' },
-    { id:'PK5', stavbaId:'ST3', datum:st, vrstva:'loziska', smesId:smes('ACL 16+'), tloustkaMm:60,
+    { id:'PK5', stavbaId:'ST3', datum:st, vrstva:'lozni', smesId:smes('ACL 16+'), tloustkaMm:60,
       plochaM2:2400, tunyPlan:346, usek:{kmOd:3.2,kmDo:3.8,popis:'obchvat, první úsek'}, partaId:'P3',
       obalovnaId:'O2', dopravceId:'D1', typAuta:'osmikolka', dopravaAut:4, casStart:'06:30', stav:'potvrzeno' },
     { id:'PK6', stavbaId:'ST1', datum:ct, vrstva:'obrusna', smesId:smes('ACO 11 S'), tloustkaMm:40,
