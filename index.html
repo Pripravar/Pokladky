@@ -21,7 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Verze v ?v= se zvedá při KAŽDÉM nasazení, jinak telefon drží staré moduly. -->
-<link rel="stylesheet" href="css/app.css?v=8">
+<link rel="stylesheet" href="css/app.css?v=9">
 </head>
 <body>
 
@@ -289,26 +289,41 @@
 </div>
 
 <!-- ══ Moduly ════════════════════════════════════════════════════════════ -->
-<script src="js/ikony.js?v=8"></script>
-<script src="js/core.js?v=8"></script>
-<script src="js/mapa.js?v=8"></script>
-<script src="js/ciselniky.js?v=8"></script>
-<script src="js/stavby.js?v=8"></script>
-<script src="js/pokladka.js?v=8"></script>
-<script src="js/plan.js?v=8"></script>
-<script src="js/dispecink.js?v=8"></script>
-<script src="js/objednavky.js?v=8"></script>
-<script src="js/vazni.js?v=8"></script>
-<script src="js/dnes.js?v=8"></script>
-<script src="js/sprava.js?v=8"></script>
-<script src="js/ukazka.js?v=8"></script>
+<script src="js/ikony.js?v=9"></script>
+<script src="js/core.js?v=9"></script>
+<script src="js/mapa.js?v=9"></script>
+<script src="js/ciselniky.js?v=9"></script>
+<script src="js/stavby.js?v=9"></script>
+<script src="js/pokladka.js?v=9"></script>
+<script src="js/plan.js?v=9"></script>
+<script src="js/dispecink.js?v=9"></script>
+<script src="js/objednavky.js?v=9"></script>
+<script src="js/vazni.js?v=9"></script>
+<script src="js/dnes.js?v=9"></script>
+<script src="js/sprava.js?v=9"></script>
+<script src="js/ukazka.js?v=9"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function(){
     vykresliStatickeIkony();
     bootApp();
     try { naplnUkazkovaData(); } catch(e){ console.warn(e); }
     showView('dnes');
-    if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(function(){});
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('service-worker.js').then(function(reg){
+        // Nová verze appky na serveru → vyměnit ji hned, ne až za pár dní.
+        reg.addEventListener('updatefound', function(){
+          var novy = reg.installing; if(!novy) return;
+          novy.addEventListener('statechange', function(){
+            if(novy.state === 'installed' && navigator.serviceWorker.controller){
+              novy.postMessage({ type:'skipWaiting' });
+              if(typeof showToast === 'function') showToast('Je tu novější verze aplikace, načítám ji…', 2500);
+              setTimeout(function(){ location.reload(); }, 1200);
+            }
+          });
+        });
+        setInterval(function(){ reg.update(); }, 30*60*1000);   // koukni se každou půlhodinu
+      }).catch(function(){});
+    }
   });
 </script>
 <!-- Plovoucí přepínač mezi appkami ze sdíleného rozcestníku OZ-JIH -->

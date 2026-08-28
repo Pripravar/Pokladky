@@ -6,7 +6,7 @@
  * Proto se u vlastních souborů používá „nejdřív síť, cache jako záloha"
  * (stale-while-revalidate) a při KAŽDÉM nasazení se zvedne CACHE_VERSION.
  * ========================================================================== */
-var CACHE_VERSION = 'pokladky-v8';
+var CACHE_VERSION = 'pokladky-v9';
 var JADRO = [
   './', './index.html', './manifest.json', './css/app.css',
   './js/ikony.js', './js/core.js', './js/mapa.js', './js/ciselniky.js', './js/stavby.js',
@@ -35,8 +35,17 @@ self.addEventListener('fetch', function(e){
   var url = new URL(req.url);
   if(url.origin !== location.origin) return;          // CDN a mapové dlaždice neřešíme
 
+  /* POZOR — past, která už jednou způsobila, že lidem appka „zamrzla" na staré
+   * verzi: obyčejný fetch() respektuje HTTP cache prohlížeče. GitHub Pages
+   * posílá Cache-Control s desetiminutovou platností, takže i „nejdřív síť"
+   * vracelo starý soubor, aniž by se serveru vůbec zeptalo. U vlastního kódu
+   * proto vynucujeme revalidaci — server buď pošle novou verzi, nebo krátké
+   * „beze změny". */
+  var vlastniKod = req.mode === 'navigate' || /\.(html|js|css|json)$/i.test(url.pathname);
+  var pozadavek  = vlastniKod ? new Request(req, { cache:'no-cache' }) : req;
+
   e.respondWith(
-    fetch(req).then(function(res){
+    fetch(pozadavek).then(function(res){
       var kopie = res.clone();
       caches.open(CACHE_VERSION).then(function(c){ c.put(req, kopie); }).catch(function(){});
       return res;
@@ -46,4 +55,9 @@ self.addEventListener('fetch', function(e){
       });
     })
   );
+});
+
+/* Umožní appce vynutit okamžitou výměnu service workeru po nasazení. */
+self.addEventListener('message', function(e){
+  if(e.data && e.data.type === 'skipWaiting') self.skipWaiting();
 });
