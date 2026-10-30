@@ -71,7 +71,8 @@ function renderDnes(){
   /* Rychlé akce — to, co se během směny mačká nejčastěji */
   h += '<div class="sekce"><span class="sekce-t">Rychlé akce</span></div><div class="rada-2">' +
        '<button class="btn" id="btn-vazni" onclick="openVazni()">' + ico('vaha',18) + '<span>Vážní lístek</span></button>' +
-       rychlaAkce('btn-foto',      'foto',   'Vyfotit',      2) +
+       '<button class="btn" id="btn-foto" onclick="vyfotit()" style="position:relative">' + ico('foto',18) +
+         '<span>Vyfotit</span><span class="tb-badge" id="badge-fronta" style="top:4px;right:8px"></span></button>' +
        rychlaAkce('btn-dochazka',  'parta',  'Docházka',     2) +
        rychlaAkce('btn-tankovani', 'palivo', 'Tankování',    3) +
        '</div>';
@@ -118,10 +119,10 @@ function renderVice(){
     { id:'btn-nova-stavba2', ico:'stavba', t:'Stavby',     s:'Založit nebo upravit stavbu', a:'openStavbaSwitcher()' },
     { id:'btn-objednavky', ico:'mail',     t:'Objednávky', s:'Balená a nasazení aut na příští týden', a:'openObjednavky()' },
     { id:'btn-vazni2',     ico:'vaha',     t:'Vážní lístky', s:'Kolik tun se skutečně navezlo', a:'openVazni()' },
+    { id:'btn-galerie',    ico:'galerie',  t:'Fotky',        s:'Galerie ze staveb', a:'openGalerie()' },
     { id:'btn-sprava',     ico:'parta',    t:'Správa uživatelů', s:'Role, práva, přístup ke stavbám', a:'openSprava()' }
   ];
   var chystane = [
-    { ico:'galerie',   t:'Fotky',          s:'Galerie po stavbách', f:2 },
     { ico:'palivo',    t:'Tankování a servisy', s:'Motohodiny, intervaly, upozornění', f:3 },
     { ico:'penize',    t:'Drobná vydání',  s:'Limit na stavbyvedoucího', f:4 },
     { ico:'material',  t:'Spotřební materiál', s:'Rukavice, spreje, pásky…', f:4 },

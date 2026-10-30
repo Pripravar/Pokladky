@@ -454,3 +454,35 @@ table.tbl .bunka-pl  { background:rgba(232,83,107,.16); }
 .oddel { height:1px; background:var(--line); margin:var(--s5) 0; }
 .stav-tecka { width:8px; height:8px; border-radius:50%; flex:0 0 auto; background:var(--text-3); }
 .stav-tecka.ok { background:var(--ok); } .stav-tecka.ceka { background:var(--warn); }
+
+/* ── Galerie fotek ──────────────────────────────────────────────────────── */
+.foto-mrizka { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-bottom:var(--s3); }
+@media (min-width:560px){ .foto-mrizka { grid-template-columns:repeat(4,1fr); } }
+@media (min-width:900px){ .foto-mrizka { grid-template-columns:repeat(6,1fr); } }
+.foto-dlazdice {
+  position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden;
+  background:var(--surface-2); cursor:pointer;
+}
+.foto-dlazdice img { width:100%; height:100%; object-fit:cover; display:block; }
+.foto-dlazdice:active { opacity:.75; }
+.foto-nacitam { width:100%; height:100%; background:
+  linear-gradient(100deg, var(--surface-2) 30%, var(--surface-3) 50%, var(--surface-2) 70%);
+  background-size:220% 100%; animation:nacitani 1.4s linear infinite; }
+@keyframes nacitani { from { background-position:150% 0 } to { background-position:-50% 0 } }
+.foto-chybi { width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+              color:var(--text-3); font-size:20px; }
+
+/* Prohlížeč fotky přes celou obrazovku */
+#foto-fs {
+  display:none; position:fixed; inset:0; z-index:700; background:#070b14;
+  flex-direction:column; padding-top:var(--sat); padding-bottom:var(--sab);
+}
+#foto-fs-img { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:4px; }
+#foto-fs-img img { max-width:100%; max-height:100%; object-fit:contain; }
+.fs-lista { display:flex; align-items:center; gap:var(--s3); padding:var(--s3) var(--s4); }
+.fs-lista .modal-x { flex:0 0 auto; }
+#foto-fs-popis { flex:1; min-width:0; font-size:14px; line-height:1.4; }
+.fs-akce { display:flex; gap:6px; flex:0 0 auto; }
+.fs-sipky { display:flex; justify-content:space-between; padding:var(--s3) var(--s4) var(--s4); }
+.fs-sipky .btn-ikona { width:52px; height:52px; min-height:52px; border-radius:50%;
+                       background:var(--surface-2); border-color:var(--line-2); }

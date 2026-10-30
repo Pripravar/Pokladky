@@ -21,7 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Verze v ?v= se zvedá při KAŽDÉM nasazení, jinak telefon drží staré moduly. -->
-<link rel="stylesheet" href="css/app.css?v=10">
+<link rel="stylesheet" href="css/app.css?v=11">
 </head>
 <body>
 
@@ -249,6 +249,32 @@
   </div>
 </div>
 
+<!-- ══ Fotky ═════════════════════════════════════════════════════════════ -->
+<div class="modal modal-plny" id="foto-modal">
+  <div class="modal-box">
+    <div class="modal-h"><b>Fotky</b><button class="modal-x" onclick="closeModal('foto-modal')"></button></div>
+    <div id="foto-seznam"></div>
+  </div>
+</div>
+<input type="file" id="foto-input"     accept="image/*" capture="environment" multiple style="display:none" onchange="fotoVybrano(this)">
+<input type="file" id="foto-lib-input" accept="image/*" multiple style="display:none" onchange="fotoVybrano(this)">
+
+<div id="foto-fs">
+  <div class="fs-lista">
+    <button class="modal-x" onclick="zavriFoto()" id="fs-zavrit"></button>
+    <div id="foto-fs-popis"></div>
+    <div class="fs-akce">
+      <button class="btn btn-ikona btn-cisty" onclick="stahniFoto()" id="fs-stahnout"></button>
+      <button class="btn btn-ikona btn-cisty btn-nebezpeci" onclick="smazFoto()" id="fs-smazat"></button>
+    </div>
+  </div>
+  <div id="foto-fs-img"></div>
+  <div class="fs-sipky">
+    <button class="btn btn-ikona" onclick="fsPosun(-1)" id="fs-vlevo"></button>
+    <button class="btn btn-ikona" onclick="fsPosun(1)" id="fs-vpravo"></button>
+  </div>
+</div>
+
 <!-- ══ Vážní lístky ═══════════════════════════════════════════════════════ -->
 <div class="modal modal-plny" id="vazni-modal">
   <div class="modal-box">
@@ -289,19 +315,20 @@
 </div>
 
 <!-- ══ Moduly ════════════════════════════════════════════════════════════ -->
-<script src="js/ikony.js?v=10"></script>
-<script src="js/core.js?v=10"></script>
-<script src="js/mapa.js?v=10"></script>
-<script src="js/ciselniky.js?v=10"></script>
-<script src="js/stavby.js?v=10"></script>
-<script src="js/pokladka.js?v=10"></script>
-<script src="js/plan.js?v=10"></script>
-<script src="js/dispecink.js?v=10"></script>
-<script src="js/objednavky.js?v=10"></script>
-<script src="js/vazni.js?v=10"></script>
-<script src="js/dnes.js?v=10"></script>
-<script src="js/sprava.js?v=10"></script>
-<script src="js/ukazka.js?v=10"></script>
+<script src="js/ikony.js?v=11"></script>
+<script src="js/core.js?v=11"></script>
+<script src="js/mapa.js?v=11"></script>
+<script src="js/ciselniky.js?v=11"></script>
+<script src="js/stavby.js?v=11"></script>
+<script src="js/pokladka.js?v=11"></script>
+<script src="js/plan.js?v=11"></script>
+<script src="js/dispecink.js?v=11"></script>
+<script src="js/objednavky.js?v=11"></script>
+<script src="js/vazni.js?v=11"></script>
+<script src="js/foto.js?v=11"></script>
+<script src="js/dnes.js?v=11"></script>
+<script src="js/sprava.js?v=11"></script>
+<script src="js/ukazka.js?v=11"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function(){
     vykresliStatickeIkony();

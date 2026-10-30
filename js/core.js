@@ -514,6 +514,8 @@ function _enterApp(){
   if(typeof loadPokladky  === 'function') loadPokladky();
   if(typeof loadDispecinkTydny === 'function') loadDispecinkTydny();
   if(typeof loadVazni === 'function') loadVazni();
+  if(typeof loadFotky === 'function') loadFotky();
+  if(typeof obnovFrontu === 'function') obnovFrontu();
 }
 
 /* Živě sleduje uživatele — po změně práv adminem se UI samo přepočítá. */
@@ -653,6 +655,10 @@ function vykresliStatickeIkony(){
   document.querySelectorAll('.modal-x').forEach(function(b){ b.innerHTML = ico('zavrit', 20); });
   var znak = document.getElementById('auth-znak');   if(znak) znak.innerHTML = ico('vrstvy', 28);
   var imp = document.getElementById('ico-import');   if(imp) imp.innerHTML = ico('nahrat', 17);
+  [['fs-zavrit','zavrit',20], ['fs-stahnout','stahnout',20], ['fs-smazat','kos',19],
+   ['fs-vlevo','vlevo',22], ['fs-vpravo','vpravo',22]].forEach(function(p){
+    var b = document.getElementById(p[0]); if(b) b.innerHTML = ico(p[1], p[2]);
+  });
   var pend = document.getElementById('pending-ico'); if(pend) pend.innerHTML = ico('presypaci', 40);
 
   var par = [
