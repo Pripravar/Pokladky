@@ -298,7 +298,8 @@ function osaUpdateInfo(){
       '</span>';
     return;
   }
-  var zdroj = { pd:'z dokumentace', trasa:'po silnici', rucne:'ručně' }[window._osaZdroj] || '';
+  var zdroj = { pd:'z dokumentace', trasa:'po silnici', rucne:'ručně',
+                gopro:'ze snímků GoPro', jizda:'projeto autem' }[window._osaZdroj] || '';
   el.innerHTML = '<div class="udaj">' + ico('misto',15) +
     '<span>Délka <b>' + fmtNum(d, 0) + ' m</b> · km <b>' + fmtNum(kmStart,3).replace(/\s/g,'') +
     '</b> → <b>' + fmtNum(kmStart + d/1000, 3).replace(/\s/g,'') + '</b>' +
@@ -320,4 +321,174 @@ function osaSouborVybran(input){
     if(window._osaMap) setTimeout(function(){ window._osaMap.fitBounds(body, { padding:[30,30] }); }, 150);
     showToast('Trasa načtena — ' + body.length + ' bodů, ' + fmtNum(polyLength(body),0) + ' m.', 4000);
   });
+}
+
+/* ============================================================================
+ * TRASA Z FOTEK GOPRO
+ * Kamera na autě fotí po pár vteřinách a do každého snímku zapíše GPS.
+ * Projetím úseku tak vznikne hotová osa — přesnější než klikání do mapy
+ * a bez práce navíc, protože ty snímky stejně vznikají kvůli dokumentaci.
+ *
+ * Ze souboru čteme jen začátek: EXIF je v prvních stovkách kilobajtů, zatímco
+ * celý snímek z GoPro má kolem 2,5 MB. Při dvou stovkách souborů je to rozdíl
+ * mezi stovkami megabajtů a pár megabajty.
+ * ========================================================================== */
+var EXIF_CTENO_BAJTU = 300 * 1024;
+
+function gpsZFotky(file){
+  return new Promise(function(hotovo){
+    var r = new FileReader();
+    r.onerror = function(){ hotovo(null); };
+    r.onload = function(e){
+      try { hotovo(_exifGps(new DataView(e.target.result))); }
+      catch(err){ hotovo(null); }
+    };
+    r.readAsArrayBuffer(file.slice(0, EXIF_CTENO_BAJTU));
+  });
+}
+
+function _exifGps(dv){
+  if(dv.byteLength < 12 || dv.getUint16(0) !== 0xFFD8) return null;   // není JPEG
+  var i = 2;
+  while(i < dv.byteLength - 4){
+    if(dv.getUint8(i) !== 0xFF){ i++; continue; }
+    var znacka = dv.getUint8(i+1);
+    if(znacka === 0xD8 || znacka === 0x01 || (znacka >= 0xD0 && znacka <= 0xD7)){ i += 2; continue; }
+    var delka = dv.getUint16(i+2);
+    if(znacka === 0xE1){
+      var je = true;
+      'Exif\0\0'.split('').forEach(function(z, k){ if(dv.getUint8(i+4+k) !== z.charCodeAt(0)) je = false; });
+      if(je) return _gpsZTiff(dv, i + 10);
+    }
+    i += 2 + delka;
+  }
+  return null;
+}
+function _gpsZTiff(dv, tiff){
+  var male = dv.getUint16(tiff) === 0x4949;                 // II = little endian
+  var u16 = function(o){ return dv.getUint16(o, male); };
+  var u32 = function(o){ return dv.getUint32(o, male); };
+
+  function ifd(zaklad){
+    var n = u16(zaklad), out = {};
+    for(var k = 0; k < n; k++){
+      var e = zaklad + 2 + k*12;
+      out[u16(e)] = { typ:u16(e+2), pocet:u32(e+4), data:e+8 };
+    }
+    return out;
+  }
+  var t0 = ifd(tiff + u32(tiff + 4));
+  if(!t0[0x8825]) return null;                              // snímek nemá GPS
+  var g = ifd(tiff + u32(t0[0x8825].data));
+
+  function zlomky(tag, pocet){
+    var o = tiff + u32(g[tag].data), out = [];
+    for(var k = 0; k < pocet; k++){
+      var ci = u32(o + k*8), jm = u32(o + k*8 + 4);
+      out.push(jm ? ci/jm : 0);
+    }
+    return out;
+  }
+  function smer(tag){ return g[tag] ? String.fromCharCode(dv.getUint8(g[tag].data)) : ''; }
+
+  if(!g[2] || !g[4]) return null;
+  var la = zlomky(2, 3), lo = zlomky(4, 3);
+  var lat = la[0] + la[1]/60 + la[2]/3600;
+  var lng = lo[0] + lo[1]/60 + lo[2]/3600;
+  if(smer(1) === 'S') lat = -lat;
+  if(smer(3) === 'W') lng = -lng;
+  if(!lat || !lng) return null;
+
+  var cas = null;
+  if(g[7]){ try { var t = zlomky(7, 3); cas = t[0]*3600 + t[1]*60 + t[2]; } catch(e){} }
+  return { lat:+lat.toFixed(6), lng:+lng.toFixed(6), cas:cas };
+}
+
+/* Z vybraných snímků poskládá trasu seřazenou podle času pořízení. */
+function osaZFotekGoPro(input){
+  var soubory = Array.prototype.slice.call(input.files || []);
+  input.value = '';
+  if(!soubory.length) return;
+
+  var info = document.getElementById('osa-info');
+  var hlas = function(t){ if(info) info.innerHTML = '<span class="tichy-2">' + t + '</span>'; };
+  hlas('Čtu polohu z ' + soubory.length + ' snímků…');
+
+  var body = [], bezGps = 0, hotovo = 0;
+  var dalsi = function(k){
+    if(k >= soubory.length) return dokonci();
+    gpsZFotky(soubory[k]).then(function(g){
+      hotovo++;
+      if(g) body.push(g); else bezGps++;
+      if(hotovo % 10 === 0) hlas('Čtu polohu… ' + hotovo + ' z ' + soubory.length);
+      dalsi(k + 1);
+    });
+  };
+  function dokonci(){
+    if(body.length < 2){
+      showToast('Ve snímcích se nenašla poloha. Má kamera zapnuté GPS?', 6000);
+      osaUpdateInfo(); return;
+    }
+    /* Seřadit podle času pořízení — výběr souborů nemusí přijít v pořadí. */
+    if(body.every(function(b){ return b.cas !== null; })) body.sort(function(a,b){ return a.cas - b.cas; });
+    var trasa = proridTrasu(body.map(function(b){ return [b.lat, b.lng]; }), MAX_BODU_OSY);
+
+    window._osaBody = trasa;
+    window._osaKotvy = [trasa[0], trasa[trasa.length-1]];
+    window._osaZdroj = 'gopro';
+    osaMapInit();
+    osaRedraw();
+    if(window._osaMap) setTimeout(function(){ window._osaMap.fitBounds(trasa, { padding:[30,30] }); }, 150);
+    showToast('Trasa z ' + body.length + ' snímků · ' + fmtNum(polyLength(trasa),0) + ' m' +
+              (bezGps ? ' (' + bezGps + ' snímků bylo bez polohy)' : ''), 5000);
+  }
+  dalsi(0);
+}
+
+/* ============================================================================
+ * TRASA ZA JÍZDY
+ * Stavbyvedoucí sedne do auta, na začátku úseku dá start, projede ho a na konci
+ * stop. Appka mezitím sbírá polohu. Žádné klikání do mapy.
+ * ========================================================================== */
+window._jizdaId = null; window._jizdaBody = [];
+var JIZDA_MIN_POSUN = 8;        // metrů — pod tím je to jen šum GPS
+
+function jizdaStart(){
+  if(!navigator.geolocation){ showToast('Tenhle prohlížeč neumí určit polohu.'); return; }
+  window._jizdaBody = [];
+  window._jizdaId = navigator.geolocation.watchPosition(function(p){
+    var b = [+p.coords.latitude.toFixed(6), +p.coords.longitude.toFixed(6)];
+    var posl = window._jizdaBody[window._jizdaBody.length-1];
+    if(posl && haversine(posl, b) < JIZDA_MIN_POSUN) return;
+    if(p.coords.accuracy > 50) return;                       // nepřesný údaj zahodíme
+    window._jizdaBody.push(b);
+    window._osaBody = window._jizdaBody.slice();
+    window._osaZdroj = 'jizda';
+    osaRedraw();
+    if(window._osaMap && window._jizdaBody.length === 1) window._osaMap.setView(b, 16);
+    jizdaInfo();
+  }, function(e){
+    showToast('Poloha není dostupná: ' + (e.message || ''), 5000);
+    jizdaStop();
+  }, { enableHighAccuracy:true, maximumAge:2000, timeout:20000 });
+  renderOsaOvladani();
+  showToast('Sleduju polohu. Na konci úseku dej Ukončit.', 4000);
+}
+function jizdaStop(){
+  if(window._jizdaId !== null){ navigator.geolocation.clearWatch(window._jizdaId); window._jizdaId = null; }
+  if(window._jizdaBody.length >= 2){
+    window._osaKotvy = [window._jizdaBody[0], window._jizdaBody[window._jizdaBody.length-1]];
+    showToast('Projeto ' + fmtNum(polyLength(window._jizdaBody),0) + ' m · ' +
+              window._jizdaBody.length + ' bodů. Doplň staničení a ulož.', 6000);
+  } else if(window._jizdaBody.length){
+    showToast('Zaznamenal se jen jeden bod — to na trasu nestačí.', 5000);
+  }
+  renderOsaOvladani();
+  osaUpdateInfo();
+}
+function jizdaInfo(){
+  var el = document.getElementById('osa-info'); if(!el) return;
+  el.innerHTML = '<div class="udaj" style="color:var(--ok)">' + ico('misto',15) +
+    '<span><b>Sleduju polohu</b> · ' + window._jizdaBody.length + ' bodů · ' +
+    fmtNum(polyLength(window._jizdaBody),0) + ' m</span></div>';
 }

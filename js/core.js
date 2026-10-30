@@ -655,6 +655,7 @@ function vykresliStatickeIkony(){
   document.querySelectorAll('.modal-x').forEach(function(b){ b.innerHTML = ico('zavrit', 20); });
   var znak = document.getElementById('auth-znak');   if(znak) znak.innerHTML = ico('vrstvy', 28);
   var imp = document.getElementById('ico-import');   if(imp) imp.innerHTML = ico('nahrat', 17);
+  var gp  = document.getElementById('ico-gopro');    if(gp)  gp.innerHTML  = ico('foto', 17);
   [['fs-zavrit','zavrit',20], ['fs-stahnout','stahnout',20], ['fs-smazat','kos',19],
    ['fs-vlevo','vlevo',22], ['fs-vpravo','vpravo',22]].forEach(function(p){
     var b = document.getElementById(p[0]); if(b) b.innerHTML = ico(p[1], p[2]);

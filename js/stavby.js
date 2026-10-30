@@ -175,6 +175,16 @@ function deleteStavba(){
 
 /* Přepínač způsobu zadání trasy + návod k němu. */
 function renderOsaOvladani(){
+  /* Tlačítko pro záznam trasy za jízdy. */
+  var j = document.getElementById('osa-jizda');
+  if(j){
+    var jede = (window._jizdaId !== null && window._jizdaId !== undefined);
+    j.innerHTML = jede
+      ? '<button class="btn btn-siroky" style="border-color:var(--ok);color:var(--ok)" onclick="jizdaStop()">' +
+          ico('fajfka',17) + '<span>Ukončit záznam trasy</span></button>'
+      : '<button class="btn btn-siroky" onclick="jizdaStart()">' + ico('misto',17) +
+          '<span>Zaznamenat trasu za jízdy</span></button>';
+  }
   var t = document.getElementById('seg-trasa'), r = document.getElementById('seg-rucne');
   if(t) t.classList.toggle('on', window._osaRezim !== 'rucne');
   if(r) r.classList.toggle('on', window._osaRezim === 'rucne');

@@ -21,7 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Verze v ?v= se zvedá při KAŽDÉM nasazení, jinak telefon drží staré moduly. -->
-<link rel="stylesheet" href="css/app.css?v=11">
+<link rel="stylesheet" href="css/app.css?v=12">
 </head>
 <body>
 
@@ -152,9 +152,11 @@
 
     <button class="btn btn-siroky" onclick="document.getElementById('osa-soubor').click()">
       <span id="ico-import"></span><span>Nahrát trasu z dokumentace (GPX, KML)</span></button>
+    <button class="btn btn-siroky" style="margin-top:8px" onclick="document.getElementById('osa-gopro').click()">
+      <span id="ico-gopro"></span><span>Načíst trasu ze snímků GoPro</span></button>
     <div class="napoveda" style="margin:8px 0 16px">
-      Nejpřesnější cesta. Export trasy z Mapy.cz, z projektu nebo ze zaměření.
-      Nemáš-li soubor, naklikej trasu níž v mapě.
+      Kamera na autě zapisuje do každého snímku polohu, takže projetím úseku
+      vznikne hotová trasa. Vyber všechny snímky z jízdy najednou.
     </div>
 
     <div class="segmenty">
@@ -162,6 +164,7 @@
       <button id="seg-rucne" onclick="osaRezim('rucne')">Vlastní body</button>
     </div>
     <div class="napoveda" id="osa-navod" style="margin:-8px 0 12px"></div>
+    <div id="osa-jizda" style="margin-bottom:12px"></div>
 
     <div class="mapa-box" id="osa-map"></div>
     <div class="rada" style="margin-top:8px">
@@ -283,6 +286,7 @@
     <div id="vazni-edit" style="display:none"></div>
   </div>
 </div>
+<input type="file" id="osa-gopro" accept="image/*,.36P,.jpg,.jpeg" multiple style="display:none" onchange="osaZFotekGoPro(this)">
 <input type="file" id="osa-soubor" accept=".gpx,.kml,.txt,.csv,text/xml,application/gpx+xml" style="display:none" onchange="osaSouborVybran(this)">
 <input type="file" id="vazni-foto-in"  accept="image/*" capture="environment" style="display:none" onchange="vazniFotoVybrana(this)">
 <input type="file" id="vazni-foto-lib" accept="image/*" style="display:none" onchange="vazniFotoVybrana(this)">
@@ -315,20 +319,20 @@
 </div>
 
 <!-- ══ Moduly ════════════════════════════════════════════════════════════ -->
-<script src="js/ikony.js?v=11"></script>
-<script src="js/core.js?v=11"></script>
-<script src="js/mapa.js?v=11"></script>
-<script src="js/ciselniky.js?v=11"></script>
-<script src="js/stavby.js?v=11"></script>
-<script src="js/pokladka.js?v=11"></script>
-<script src="js/plan.js?v=11"></script>
-<script src="js/dispecink.js?v=11"></script>
-<script src="js/objednavky.js?v=11"></script>
-<script src="js/vazni.js?v=11"></script>
-<script src="js/foto.js?v=11"></script>
-<script src="js/dnes.js?v=11"></script>
-<script src="js/sprava.js?v=11"></script>
-<script src="js/ukazka.js?v=11"></script>
+<script src="js/ikony.js?v=12"></script>
+<script src="js/core.js?v=12"></script>
+<script src="js/mapa.js?v=12"></script>
+<script src="js/ciselniky.js?v=12"></script>
+<script src="js/stavby.js?v=12"></script>
+<script src="js/pokladka.js?v=12"></script>
+<script src="js/plan.js?v=12"></script>
+<script src="js/dispecink.js?v=12"></script>
+<script src="js/objednavky.js?v=12"></script>
+<script src="js/vazni.js?v=12"></script>
+<script src="js/foto.js?v=12"></script>
+<script src="js/dnes.js?v=12"></script>
+<script src="js/sprava.js?v=12"></script>
+<script src="js/ukazka.js?v=12"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function(){
     vykresliStatickeIkony();
